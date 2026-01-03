@@ -70,6 +70,7 @@
 
   // ===== 状態 =====
   let idToken = null;
+  let accessToken = null; 
   let profile = null;
 
   // ===== UI =====
@@ -109,12 +110,14 @@
       }
 
       idToken = liff.getIDToken();
-
+      accessToken = liff.getAccessToken();
+      
       try { profile = await liff.getProfile(); } catch (e) { profile = null; }
-
-      setStatus("初期化OK（idToken取得済み）", true);
-      setDetail(profile ? `ログイン：${profile.displayName}` : "ログイン：取得中（profile未取得）");
+      
+      setStatus("初期化OK（access_token取得済み）", true);
+      setDetail(profile ? `ログイン：${profile.displayName}` : "ログイン：取得中");
       enableButtons(true);
+
 
       // 任意：起動直後に自動で whoami
       // await whoami();
