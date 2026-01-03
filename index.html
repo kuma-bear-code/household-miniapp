@@ -163,6 +163,17 @@
   }
 }
 
+  // ===== 家計簿ダッシュボード =====
+  async function loadSummary() {
+  const gasUrl = $("gasUrl").value.trim();
+  const url =
+    `${gasUrl}?action=api&op=summary&access_token=${encodeURIComponent(accessToken)}`;
+
+  const json = await fetchJson(url);
+  setOutput(json);
+}
+
+  
   // ===== プロフィール表示 =====
   async function showProfile() {
     try {
