@@ -1,173 +1,219 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>家計簿ミニアプリ</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>家計簿ミニアプリ（検証）</title>
+
+  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <style>
-    body{font-family:system-ui, -apple-system, "Segoe UI", sans-serif; margin:16px;}
-    .row{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;}
-    input,select,button{font-size:16px; padding:10px;}
-    table{border-collapse:collapse; width:100%;}
-    th,td{border:1px solid #ddd; padding:8px; font-size:14px;}
-    th{background:#f5f5f5; position:sticky; top:0;}
-    .card{border:1px solid #ddd; border-radius:12px; padding:12px; margin:12px 0;}
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    button.primary { background: #1DB446; color: #fff; border-color: #1DB446; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    pre { background:#111; color:#ddd; padding:12px; border-radius:12px; overflow:auto; }
+    .muted { color:#666; font-size: 12px; }
+    .ok { color:#1b8f3a; font-weight: 700; }
+    .ng { color:#c62828; font-weight: 700; }
+    input { padding:10px 12px; border-radius:10px; border:1px solid #ccc; width: 100%; box-sizing: border-box;}
   </style>
 </head>
+
 <body>
-  <h2>家計簿</h2>
-  <div id="status" class="card">初期化中…</div>
+  <h2>家計簿ミニアプリ（whoami確認）</h2>
+  <div class="muted">
+    目的：LIFFで取得した idToken を GAS に渡し、ユーザー識別（sub/userId）を確認します。
+  </div>
 
   <div class="card">
-    <div class="row">
-      <button onclick="loadSummary()">今月合計</button>
-      <button onclick="loadBreakdown()">今月一覧</button>
-      <button onclick="undo()">取り消し</button>
+    <div><b>ステータス</b></div>
+    <div id="status">初期化中…</div>
+    <div class="muted" id="detail"></div>
+  </div>
+
+  <div class="card">
+    <div><b>接続先</b></div>
+    <div class="muted">GAS WebApp URL</div>
+    <input id="gasUrl" />
+    <div class="muted" style="margin-top:8px;">LIFF ID</div>
+    <input id="liffId" />
+    <div class="muted" style="margin-top:8px;">
+      ※ まずはこのまま触らずOK。将来URLを変える時に使えます。
     </div>
   </div>
 
   <div class="card">
-    <h3>入力</h3>
     <div class="row">
-      <input id="item" placeholder="項目（例：食費）" style="flex:2; min-width:200px;">
-      <input id="amount" placeholder="金額（例：1200）" inputmode="numeric" style="flex:1; min-width:140px;">
+      <button class="primary" id="btnWhoami" onclick="whoami()" disabled>whoami（本人確認）</button>
+      <button id="btnProfile" onclick="showProfile()" disabled>プロフィール表示</button>
+      <button id="btnClose" onclick="closeLiff()" disabled>閉じる</button>
+      <button onclick="copyDebug()">デバッグ情報コピー</button>
     </div>
-    <div class="row">
-      <input id="memo1" placeholder="備考1（例：かずき）" style="flex:1; min-width:160px;">
-      <input id="memo2" placeholder="備考2（例：スーパー）" style="flex:2; min-width:200px;">
-      <button onclick="add()">登録</button>
+    <div class="muted" style="margin-top:8px;">
+      「whoami」で userId(sub) が返ればOK。実久さんも同じ手順で userId を取って許可リストに追加できます。
     </div>
   </div>
 
   <div class="card">
-    <h3>表示</h3>
-    <div id="out"></div>
-    <div class="row">
-      <button id="moreBtn" style="display:none;" onclick="loadMore()">もっと見る</button>
-    </div>
+    <div><b>レスポンス</b></div>
+    <pre id="output">（ここに結果が出ます）</pre>
   </div>
 
 <script>
-  // ★ここをあなたのGAS WebアプリURLにする
-  // 例: https://script.google.com/macros/s/AKfycb.../exec
-  const GAS_BASE_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
+  // ===== 固定（あなたの値で埋め込み済み） =====
+  const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
+  const DEFAULT_LIFF_ID = "2008812269-var864Dv";
 
-  let idToken = "";
-  let nextStart = 0;
+  // ===== 状態 =====
+  let idToken = null;
+  let profile = null;
 
-  function setStatus(msg){ document.getElementById("status").textContent = msg; }
-
-  async function init(){
-    await liff.init({ liffId: "2008812269-var864Dv" });
-    if (!liff.isLoggedIn()) liff.login();
-    idToken = liff.getIDToken();
-    const prof = await liff.getProfile();
-    setStatus(`ログインOK：${prof.displayName}`);
-
-    // whoami で疎通確認
-    const r = await fetch(`${GAS_BASE_URL}?action=api&op=whoami&id_token=${encodeURIComponent(idToken)}`);
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error || "whoami failed");
+  // ===== UI =====
+  const $ = (id) => document.getElementById(id);
+  function setStatus(text, ok=null) {
+    const el = $("status");
+    el.textContent = text;
+    el.className = ok === null ? "" : (ok ? "ok" : "ng");
+  }
+  function setDetail(text) { $("detail").textContent = text || ""; }
+  function setOutput(objOrText) {
+    $("output").textContent = (typeof objOrText === "string")
+      ? objOrText
+      : JSON.stringify(objOrText, null, 2);
   }
 
-  async function loadSummary(){
-    const r = await fetch(`${GAS_BASE_URL}?action=api&op=summary&id_token=${encodeURIComponent(idToken)}`);
-    const j = await r.json();
-    if(!j.ok) return alert(j.error);
-
-    const rows = j.rows || [];
-    const html = `
-      <div><b>全体の残額：</b>${Number(j.overall||0).toLocaleString()}円</div>
-      <table>
-        <thead><tr><th>項目</th><th>予算</th><th>支出</th><th>残額</th></tr></thead>
-        <tbody>
-          ${rows.map(r=>`
-            <tr>
-              <td>${escapeHtml(r.name)}</td>
-              <td style="text-align:right">${Number(r.budget).toLocaleString()}</td>
-              <td style="text-align:right">${Number(r.spend).toLocaleString()}</td>
-              <td style="text-align:right; color:${r.remain<0?'#d32f2f':'#000'}">${Number(r.remain).toLocaleString()}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>`;
-    document.getElementById("out").innerHTML = html;
-    document.getElementById("moreBtn").style.display = "none";
+  function enableButtons(enabled) {
+    $("btnWhoami").disabled = !enabled;
+    $("btnProfile").disabled = !enabled;
+    $("btnClose").disabled = !enabled;
   }
 
-  async function loadBreakdown(){
-    nextStart = 0;
-    await loadBreakdownPage(true);
+  // ===== LIFF 初期化 =====
+  async function init() {
+    $("gasUrl").value = DEFAULT_GAS_URL;
+    $("liffId").value = DEFAULT_LIFF_ID;
+
+    try {
+      setStatus("LIFF 初期化中…");
+      await liff.init({ liffId: DEFAULT_LIFF_ID });
+
+      if (!liff.isLoggedIn()) {
+        setStatus("LINEログインが必要です。ログイン画面に移動します…");
+        setDetail("");
+        liff.login();
+        return;
+      }
+
+      idToken = liff.getIDToken();
+
+      // getProfileはネットワークが不安定だと失敗することがあるので try
+      try { profile = await liff.getProfile(); } catch (e) { profile = null; }
+
+      setStatus("初期化OK（idToken取得済み）", true);
+      setDetail(profile ? `ログイン：${profile.displayName}` : "ログイン：取得中（profile未取得）");
+      enableButtons(true);
+
+      // 初回は自動でwhoami叩いても良い（好みでON/OFF）
+      // await whoami();
+
+    } catch (err) {
+      setStatus("初期化エラー", false);
+      setDetail(String(err && err.message ? err.message : err));
+      setOutput({ error: "liff_init_failed", detail: String(err) });
+      enableButtons(false);
+    }
   }
 
-  async function loadMore(){
-    await loadBreakdownPage(false);
+  // ===== GAS 呼び出し =====
+  async function fetchJson(url) {
+    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    const text = await res.text();
+
+    // JSONとして読めない時のために保険
+    try { return JSON.parse(text); }
+    catch (_) { return { error: "non_json_response", httpStatus: res.status, body: text }; }
   }
 
-  async function loadBreakdownPage(reset){
-    const r = await fetch(`${GAS_BASE_URL}?action=api&op=breakdown&start=${nextStart}&limit=50&id_token=${encodeURIComponent(idToken)}`);
-    const j = await r.json();
-    if(!j.ok) return alert(j.error);
+  // ===== whoami =====
+  async function whoami() {
+    if (!idToken) {
+      setStatus("idToken がありません（初期化未完了）", false);
+      return;
+    }
 
-    const rows = j.rows || [];
-    const table = `
-      <table>
-        <thead><tr><th>日付</th><th>項目</th><th>金額</th><th>備考1</th><th>備考2</th></tr></thead>
-        <tbody>
-          ${rows.map(r=>`
-            <tr>
-              <td>${escapeHtml(String(r.date))}</td>
-              <td>${escapeHtml(r.item)}</td>
-              <td style="text-align:right">${Number(r.amount).toLocaleString()}</td>
-              <td>${escapeHtml(r.memo1||"")}</td>
-              <td>${escapeHtml(r.memo2||"")}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>`;
+    const gasUrl = $("gasUrl").value.trim();
+    const url = `${gasUrl}?action=whoami&id_token=${encodeURIComponent(idToken)}`;
 
-    if (reset) document.getElementById("out").innerHTML = table;
-    else document.getElementById("out").innerHTML += table;
+    setStatus("whoami 実行中…");
+    setDetail("GASへ問い合わせています…");
 
-    nextStart = j.nextStart || (nextStart + rows.length);
-    document.getElementById("moreBtn").style.display = j.hasMore ? "inline-block" : "none";
+    try {
+      const json = await fetchJson(url);
+      setOutput(json);
+
+      if (json && (json.ok === true || json.userId || json.sub)) {
+        setStatus("whoami OK（userId取得）", true);
+        const uid = json.userId || json.sub;
+        setDetail(`userId(sub): ${uid}`);
+      } else {
+        setStatus("whoami NG（GAS側の応答を確認）", false);
+        setDetail("GAS側で action=whoami を実装しているか / id_token検証が通っているか確認");
+      }
+    } catch (err) {
+      setStatus("whoami エラー", false);
+      setDetail(String(err && err.message ? err.message : err));
+      setOutput({ error: "whoami_failed", detail: String(err) });
+    }
   }
 
-  async function add(){
-    const item = document.getElementById("item").value.trim();
-    const amount = Number(document.getElementById("amount").value);
-    const memo1 = document.getElementById("memo1").value || "";
-    const memo2 = document.getElementById("memo2").value || "";
-    const body = { op:"add", id_token:idToken, item, amount, memo1, memo2 };
-
-    const r = await fetch(`${GAS_BASE_URL}?action=api&op=add`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(body)
-    });
-    const j = await r.json();
-    if(!j.ok) return alert(j.error || j.msg);
-    alert("登録しました");
+  // ===== プロフィール表示 =====
+  async function showProfile() {
+    try {
+      if (!profile) profile = await liff.getProfile();
+      setOutput({ profile });
+    } catch (e) {
+      setOutput({ error: "getProfile_failed", detail: String(e) });
+    }
   }
 
-  async function undo(){
-    const body = { op:"undo", id_token:idToken };
-    const r = await fetch(`${GAS_BASE_URL}?action=api&op=undo`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(body)
-    });
-    const j = await r.json();
-    if(!j.ok) return alert(j.msg || j.error || "undo failed");
-    alert(j.msg || "取り消しました");
+  // ===== 閉じる =====
+  function closeLiff() {
+    try {
+      if (liff.isInClient()) liff.closeWindow();
+      else setStatus("LINEアプリ内で開いている時だけ「閉じる」が効きます", false);
+    } catch (e) {
+      setOutput({ error: "close_failed", detail: String(e) });
+    }
   }
 
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // ===== デバッグ情報コピー =====
+  async function copyDebug() {
+    const info = {
+      gasUrl: $("gasUrl").value.trim(),
+      liffId: $("liffId").value.trim(),
+      isInClient: (typeof liff !== "undefined" && liff.isInClient) ? liff.isInClient() : null,
+      isLoggedIn: (typeof liff !== "undefined" && liff.isLoggedIn) ? liff.isLoggedIn() : null,
+      hasIdToken: !!idToken,
+      displayName: profile ? profile.displayName : null
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(info, null, 2));
+      setStatus("デバッグ情報をコピーしました", true);
+      setDetail("");
+    } catch (e) {
+      setStatus("コピーできませんでした（ブラウザ制限の可能性）", false);
+      setDetail("");
+      setOutput(info);
+    }
   }
 
-  init().catch(e=>setStatus("初期化エラー: " + e.message));
+  // 起動
+  window.addEventListener("load", init);
 </script>
+
 </body>
 </html>
