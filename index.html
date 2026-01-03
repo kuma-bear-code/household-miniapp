@@ -1,675 +1,189 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>家計簿</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>家計簿</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  <!-- LIFF SDK -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
-  <style>
-    :root{
-      --green:#1DB446;
-      --bg:#f6f7f9;
-      --card:#ffffff;
-      --bd:#e6e8ee;
-      --text:#111;
-      --muted:#667085;
-      --danger:#d92d20;
-      --shadow: 0 6px 22px rgba(16,24,40,.06);
-      --radius: 16px;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      background:var(--bg);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
-      color:var(--text);
-    }
-    .wrap{ max-width: 760px; margin: 0 auto; padding: 16px; padding-bottom: 88px; }
-    .topbar{
-      position: sticky; top:0; z-index:20;
-      background: linear-gradient(to bottom, var(--bg) 60%, rgba(246,247,249,0));
-      padding: 12px 16px 10px;
-      backdrop-filter: blur(6px);
-    }
-    .title{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-    }
-    h1{ font-size: 18px; margin:0; }
-    .chip{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border:1px solid var(--bd); border-radius:999px;
-      background:#fff; color:var(--muted); font-size:12px;
-    }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--bd);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-      margin: 12px 0;
-    }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; }
-    .col{ flex:1; min-width: 180px; display:flex; flex-direction:column; gap:6px; }
-
-    label{ font-size:12px; color:var(--muted); }
-    input, select{
-      height: 42px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border:1px solid #d0d5dd;
-      background:#fff;
-      font-size:14px;
-    }
-
-    button{
-      height: 42px;
-      padding: 0 14px;
-      border-radius: 12px;
-      border: 1px solid #d0d5dd;
-      background:#fff;
-      cursor:pointer;
-      font-size:14px;
-    }
-    button.primary{
-      background: var(--green);
-      border-color: var(--green);
-      color:#fff;
-      font-weight: 700;
-    }
-    button.danger{
-      background:#fff;
-      border-color:#f2b8b5;
-      color: var(--danger);
-      font-weight: 700;
-    }
-    button.ghost{
-      background: transparent;
-      border-color: transparent;
-      color: var(--muted);
-    }
-    button:disabled{ opacity:.5; cursor:not-allowed; }
-
-    .statusline{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .ok{ color:#067647; font-weight:700; }
-    .ng{ color:#b42318; font-weight:700; }
-
-    .kpis{ display:flex; gap:10px; flex-wrap:wrap; }
-    .kpi{
-      border:1px solid var(--bd);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background:#fff;
-      min-width: 160px;
-    }
-    .kpi .t{ font-size:12px; color:var(--muted); }
-    .kpi .v{ font-size:16px; font-weight:800; margin-top:4px; }
-
-    table{ width:100%; border-collapse: collapse; }
-    th, td{ padding: 10px 8px; border-bottom: 1px solid #eef0f4; font-size: 13px; vertical-align: top; }
-    th{ font-size: 12px; color: var(--muted); text-align:left; }
-    .right{ text-align:right; }
-    .small{ font-size:12px; color:var(--muted); }
-
-    .bottombar{
-      position: fixed; left:0; right:0; bottom:0;
-      background: rgba(255,255,255,.92);
-      border-top: 1px solid var(--bd);
-      backdrop-filter: blur(10px);
-      padding: 10px 14px;
-      z-index: 30;
-    }
-    .bottombar .inner{ max-width: 760px; margin:0 auto; display:flex; gap:10px; }
-    .bottombar button{ flex:1; }
-
-    details{
-      border:1px solid var(--bd);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background:#fff;
-    }
-    summary{ cursor:pointer; color:var(--muted); font-size: 13px; }
-    pre{
-      margin:10px 0 0;
-      background:#111;
-      color:#ddd;
-      padding:12px;
-      border-radius: 12px;
-      overflow:auto;
-      font-size:12px;
-    }
-  </style>
+<style>
+body{margin:0;background:#f6f7f9;font-family:system-ui}
+.wrap{max-width:760px;margin:auto;padding:16px 16px 96px}
+.card{background:#fff;border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 6px 22px rgba(0,0,0,.06)}
+button{height:42px;border-radius:12px;border:1px solid #ccc;background:#fff}
+.primary{background:#1DB446;color:#fff;border-color:#1DB446;font-weight:700}
+.danger{border-color:#f2b8b5;color:#d92d20;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid #eee;padding:8px;font-size:13px}
+th{color:#667085;text-align:left}
+.right{text-align:right}
+.small{font-size:12px;color:#667085}
+</style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div class="title">
-      <h1>家計簿</h1>
-      <div class="chip" id="monthChip">月：----</div>
-    </div>
-  </div>
+<div class="wrap">
 
-  <div class="wrap">
+<div class="card">
+  <div id="status">初期化中…</div>
+  <div class="small" id="detail"></div>
+</div>
 
-    <div class="card">
-      <div class="statusline">
-        <div>
-          <span id="statusText">初期化中…</span>
-          <span id="statusBadge"></span>
-        </div>
-        <button class="ghost" onclick="closeLiff()" id="btnClose" disabled>閉じる</button>
-      </div>
-      <div class="small" id="detailText"></div>
-    </div>
+<!-- 入力 -->
+<div class="card">
+  <b>入力</b><br><br>
+  <select id="item"></select><br><br>
+  <input id="amount" placeholder="金額"><br><br>
+  <select id="memo1">
+    <option>かずき</option>
+    <option>かずきカード</option>
+    <option>みく</option>
+    <option>みくカード</option>
+  </select><br><br>
+  <input id="memo2" placeholder="メモ"><br><br>
 
-    <div class="card">
-      <div class="row" style="align-items:end;">
-        <div class="col" style="max-width: 200px;">
-          <label>月（yyyyMM）</label>
-          <input id="monthInput" placeholder="例：202601" />
-        </div>
-        <button onclick="setMonthToThis()" id="btnThis" disabled>今月</button>
-        <button onclick="setMonthToPrev()" id="btnPrev" disabled>前月</button>
-        <button class="primary" onclick="applyMonth()" id="btnApplyMonth" disabled>適用</button>
-      </div>
-      <div class="small">選択中：<b id="selectedMonth">----</b></div>
-    </div>
+  <button class="primary" onclick="add()">追加</button>
+  <button class="danger" id="undoBtn" onclick="undo()" disabled>取り消し</button>
+</div>
 
-    <div class="card">
-      <div style="font-weight:800; margin-bottom:10px;">入力</div>
-      <div class="row">
-        <div class="col">
-          <label>項目</label>
-          <select id="itemSelect"></select>
-        </div>
-        <div class="col" style="max-width: 220px;">
-          <label>金額（円）</label>
-          <input id="amountInput" inputmode="numeric" placeholder="例：1200 / １，２００" />
-          <div class="small">全角・カンマOK</div>
-        </div>
-      </div>
+<!-- サマリ -->
+<div class="card">
+  <b>今月サマリ</b>
+  <table>
+    <thead>
+      <tr>
+        <th>項目</th>
+        <th class="right">予定</th>
+        <th class="right">合計</th>
+        <th class="right">残額</th>
+      </tr>
+    </thead>
+    <tbody id="summaryBody">
+      <tr><td colspan="4" class="small">未取得</td></tr>
+    </tbody>
+  </table>
+</div>
 
-      <div class="row" style="margin-top:10px;">
-        <div class="col">
-          <label>メモ1（固定4択）</label>
-          <select id="memo1Select"></select>
-        </div>
-        <div class="col">
-          <label>メモ2（自由）</label>
-          <input id="memo2Input" placeholder="例：魚 / ドラッグストア など" />
-        </div>
-      </div>
+<!-- 明細 -->
+<div class="card">
+  <b>明細</b>
+  <table>
+    <thead>
+      <tr>
+        <th>日付</th>
+        <th>項目</th>
+        <th class="right">金額</th>
+        <th>メモ</th>
+      </tr>
+    </thead>
+    <tbody id="breakdown"></tbody>
+  </table>
+</div>
 
-      <div class="row" style="margin-top:12px;">
-        <button class="primary" onclick="addEntry()" id="btnAdd" disabled>追加</button>
-        <button class="danger" onclick="undoEntry()" id="btnUndo" disabled>取り消し</button>
-        <button onclick="clearForm()" id="btnClear" disabled>クリア</button>
-      </div>
-
-      <div class="small" style="margin-top:8px;">
-        ※「取り消し」は直前の1件だけ。Botの「取り消し」と同じ動き。
-      </div>
-    </div>
-
-    <div class="card">
-      <div style="font-weight:800; margin-bottom:10px;">サマリ</div>
-      <div class="kpis">
-        <div class="kpi">
-          <div class="t">合計（overall）</div>
-          <div class="v" id="kpiOverall">-</div>
-        </div>
-        <div class="kpi">
-          <div class="t">月</div>
-          <div class="v" id="kpiMonth">-</div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <button onclick="loadSummary()" id="btnSummary" disabled>更新</button>
-      </div>
-      <div class="small" id="summaryNote">まだ取得していません</div>
-    </div>
-
-    <div class="card">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div style="font-weight:800;">明細</div>
-        <div class="row">
-          <button onclick="pagePrev()" id="btnPrevPage" disabled>前へ</button>
-          <button onclick="pageNext()" id="btnNextPage" disabled>次へ</button>
-          <button onclick="loadBreakdown(true)" id="btnReloadBreakdown" disabled>更新</button>
-        </div>
-      </div>
-      <div class="small">start=<span id="pageStart">0</span> / limit=<span id="pageLimit">20</span> <span id="pageInfo"></span></div>
-
-      <div style="margin-top:10px; overflow:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:90px;">日付</th>
-              <th style="min-width:120px;">項目</th>
-              <th class="right" style="min-width:90px;">金額</th>
-              <th>メモ1</th>
-              <th>メモ2</th>
-            </tr>
-          </thead>
-          <tbody id="breakdownBody">
-            <tr><td colspan="5" class="small">まだ取得していません</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div style="margin-top:10px;">
-        <details>
-          <summary>詳細（デバッグ用レスポンスを表示）</summary>
-          <pre id="output">{}</pre>
-          <div class="row" style="margin-top:10px;">
-            <button onclick="copyDebug()" id="btnCopy" disabled>デバッグコピー</button>
-          </div>
-        </details>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="bottombar">
-    <div class="inner">
-      <button class="primary" onclick="addEntry()" id="btnAdd2" disabled>追加</button>
-      <button class="danger" onclick="undoEntry()" id="btnUndo2" disabled>取り消し</button>
-    </div>
-  </div>
+</div>
 
 <script>
-  // ===== あなたの値 =====
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
-  const LIFF_ID = "2008812269-var864Dv";
+const GAS="https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
+const LIFF_ID="2008812269-var864Dv";
+let token=null;
+let lastAddSucceeded=false;
 
-  // GAS側 STATIC_ITEMS と合わせる
-  const STATIC_ITEMS = [
-    '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費',
-    '電気','ガス','水道','通信費（携帯電話）','通信費（電話・インターネット・その他）',
-    '交通費','散髪代・美容費','衣服・靴','医療費','交際費','おこづかい',
-    '生命保険・医療保険費用','ガソリン代','車の費用（ガソリン以外）',
-    'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','お酒'
-  ];
+const ITEMS=[
+ '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費','お酒'
+];
 
-  // memo1 固定4択
-  const MEMO1_CHOICES = ["かずき","かずきカード","みく","みくカード"];
+function $(id){return document.getElementById(id);}
+function setStatus(t){$("status").textContent=t;}
+function formatMMDD(s){
+ const m=s.match(/(\d{4}).?(\d{2}).?(\d{2})/);
+ return m?`${Number(m[2])}月${Number(m[3])}日`:s;
+}
 
-  let accessToken = null;
-  let profile = null;
+async function init(){
+ ITEMS.forEach(v=>{
+  const o=document.createElement("option");o.text=v;$("item").appendChild(o);
+ });
+ await liff.init({liffId:LIFF_ID});
+ if(!liff.isLoggedIn()){liff.login();return;}
+ token=liff.getAccessToken();
+ setStatus("ログインOK");
+ loadSummary();
+ loadBreakdown();
+}
 
-  let selectedMonth = null;
-  let pageStart = 0;
-  const pageLimit = 20;
+async function getJson(url){
+ const r=await fetch(url);return JSON.parse(await r.text());
+}
+async function post(body){
+ const r=await fetch(GAS+"?action=api",{method:"POST",body:JSON.stringify(body)});
+ return JSON.parse(await r.text());
+}
 
-  // ===== UI util =====
-  const $ = id => document.getElementById(id);
+async function add(){
+ setStatus("追加中…");
+ lastAddSucceeded=false;
+ $("undoBtn").disabled=true;
 
-  function setStatus(text, ok=null){
-    $("statusText").textContent = text;
-    const badge = $("statusBadge");
-    badge.textContent = ok === null ? "" : (ok ? " OK" : " NG");
-    badge.className = ok === null ? "" : (ok ? "ok" : "ng");
-  }
-  function setDetail(text){ $("detailText").textContent = text || ""; }
-  function setOutput(obj){ $("output").textContent = JSON.stringify(obj, null, 2); }
+ const res=await post({
+  op:"add",access_token:token,
+  item:$("item").value,
+  amount:Number($("amount").value),
+  memo1:$("memo1").value,
+  memo2:$("memo2").value
+ });
 
-  function enableAll(){
-    const ids = [
-      "btnClose","btnThis","btnPrev","btnApplyMonth",
-      "btnAdd","btnUndo","btnClear","btnAdd2","btnUndo2",
-      "btnSummary","btnPrevPage","btnNextPage","btnReloadBreakdown","btnCopy"
-    ];
-    ids.forEach(id => { const el=$(id); if(el) el.disabled=false; });
-  }
+ if(res.ok){
+  setStatus("追加OK");
+  lastAddSucceeded=true;
+  $("undoBtn").disabled=false;
+  loadSummary(); loadBreakdown();
+ }else{
+  setStatus("追加NG："+res.error);
+ }
+}
 
-  function formatYen(n){
-    const num = Number(n);
-    if (!Number.isFinite(num)) return "-";
-    return num.toLocaleString("ja-JP") + "円";
-  }
+async function undo(){
+ if(!lastAddSucceeded) return;
+ setStatus("取り消し中…");
+ const res=await post({op:"undo",access_token:token});
+ if(res.ok){
+  setStatus("取り消しました");
+  $("undoBtn").disabled=true;
+  lastAddSucceeded=false;
+  loadSummary(); loadBreakdown();
+ }else{
+  setStatus("取り消しNG");
+ }
+}
 
-  function nowYYYYMM(){
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    return `${y}${m}`;
-  }
-  function prevYYYYMM(yyyymm){
-    const y = Number(yyyymm.slice(0,4));
-    const m = Number(yyyymm.slice(4,6));
-    const d = new Date(y, m-1, 1);
-    d.setMonth(d.getMonth()-1);
-    const yy = d.getFullYear();
-    const mm = String(d.getMonth()+1).padStart(2,"0");
-    return `${yy}${mm}`;
-  }
-  function isYYYYMM(s){
-    return /^\d{6}$/.test(s) && Number(s.slice(4,6))>=1 && Number(s.slice(4,6))<=12;
-  }
-  function setSelectedMonth(m){
-    selectedMonth = m;
-    $("selectedMonth").textContent = m;
-    $("monthInput").value = m;
-    $("monthChip").textContent = `月：${m}`;
-    $("kpiMonth").textContent = m;
-    pageStart = 0;
-    $("pageStart").textContent = String(pageStart);
-    $("pageLimit").textContent = String(pageLimit);
-  }
+async function loadSummary(){
+ const r=await getJson(GAS+"?action=api&op=summary&access_token="+token);
+ const tb=$("summaryBody"); tb.innerHTML="";
+ (r.items||[]).forEach(i=>{
+  const rest=i.planned-i.actual;
+  tb.innerHTML+=`<tr>
+    <td>${i.item}</td>
+    <td class="right">${i.planned.toLocaleString()}</td>
+    <td class="right">${i.actual.toLocaleString()}</td>
+    <td class="right">${rest.toLocaleString()}</td>
+  </tr>`;
+ });
+}
 
-  // ===== 通信 =====
-  async function fetchJson(url){
-    const res = await fetch(url, { cache:"no-store" });
-    const text = await res.text();
-    try { return JSON.parse(text); }
-    catch(_) { return { ok:false, error:"non_json_response", httpStatus: res.status, body:text }; }
-  }
+async function loadBreakdown(){
+ const r=await getJson(GAS+"?action=api&op=breakdown&access_token="+token);
+ const tb=$("breakdown"); tb.innerHTML="";
+ (r.rows||[]).forEach(v=>{
+  tb.innerHTML+=`<tr>
+    <td>${formatMMDD(v[0])}</td>
+    <td>${v[1]}</td>
+    <td class="right">${v[2]}</td>
+    <td>${v[3]||""} ${v[4]||""}</td>
+  </tr>`;
+ });
+}
 
-  // ★重要：プリフライト回避版POST（ヘッダを付けない）
-  async function postJsonNoPreflight(url, bodyObj){
-    const res = await fetch(url, {
-      method: "POST",
-      cache: "no-store",
-      body: JSON.stringify(bodyObj) // これで text/plain 扱いになりやすく、OPTIONSを避けやすい
-    });
-    const text = await res.text();
-    try { return JSON.parse(text); }
-    catch(_) { return { ok:false, error:"non_json_response", httpStatus: res.status, body:text }; }
-  }
-
-  // ===== 初期化 =====
-  async function init(){
-    // select埋め
-    $("itemSelect").innerHTML = STATIC_ITEMS.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-    $("memo1Select").innerHTML = MEMO1_CHOICES.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-
-    setSelectedMonth(nowYYYYMM());
-
-    try{
-      setStatus("初期化中…");
-      await liff.init({ liffId: LIFF_ID });
-
-      if (!liff.isLoggedIn()){
-        liff.login({ redirectUri: location.href });
-        return;
-      }
-
-      accessToken = liff.getAccessToken();
-      profile = await liff.getProfile();
-
-      setStatus("ログイン完了", true);
-      setDetail(`こんにちは、${profile.displayName} さん`);
-      enableAll();
-
-      // 起動時に読み込み
-      await loadSummary();
-      await loadBreakdown(true);
-
-    }catch(e){
-      setStatus("初期化エラー", false);
-      setDetail(String(e?.message || e));
-      setOutput({ ok:false, error:"init_failed", detail:String(e) });
-    }
-  }
-
-  // ===== サマリ/明細 =====
-  async function loadSummary(){
-    if(!accessToken){ setStatus("access_token がありません", false); return; }
-    setStatus("サマリ取得中…");
-
-    try{
-      const url = `${GAS_URL}?action=api&op=summary&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
-      const json = await fetchJson(url);
-      setOutput(json);
-
-      if(json.ok){
-        setStatus("サマリOK", true);
-        $("kpiOverall").textContent = (json.overall!=null) ? formatYen(json.overall) : "-";
-        $("summaryNote").textContent = "更新しました";
-      }else{
-        setStatus("サマリNG", false);
-        $("summaryNote").textContent = json.error || "取得失敗";
-      }
-    }catch(e){
-      setStatus("サマリ通信エラー", false);
-      setDetail(String(e?.message || e));
-      setOutput({ ok:false, error:"summary_fetch_failed", detail:String(e) });
-    }
-  }
-
-  async function loadBreakdown(reset=false){
-    if(!accessToken){ setStatus("access_token がありません", false); return; }
-    if(reset) pageStart=0;
-
-    $("pageStart").textContent = String(pageStart);
-    $("pageLimit").textContent = String(pageLimit);
-    $("pageInfo").textContent = "";
-
-    setStatus("明細取得中…");
-
-    try{
-      const url = `${GAS_URL}?action=api&op=breakdown&month=${encodeURIComponent(selectedMonth)}&start=${pageStart}&limit=${pageLimit}&access_token=${encodeURIComponent(accessToken)}`;
-      const json = await fetchJson(url);
-      setOutput(json);
-
-      if(!json.ok){
-        setStatus("明細NG", false);
-        renderBreakdown([]);
-        $("pageInfo").textContent = ` / ${json.error || ""}`;
-        return;
-      }
-
-      setStatus("明細OK", true);
-      const rows = json.rows || json.data || json.items || json.breakdown || [];
-      renderBreakdown(Array.isArray(rows) ? rows : []);
-
-      $("btnPrevPage").disabled = pageStart<=0;
-      $("btnNextPage").disabled = !(Array.isArray(rows) && rows.length===pageLimit);
-
-    }catch(e){
-      setStatus("明細通信エラー", false);
-      setDetail(String(e?.message || e));
-      setOutput({ ok:false, error:"breakdown_fetch_failed", detail:String(e) });
-    }
-  }
-
-  function renderBreakdown(rows){
-    const tbody = $("breakdownBody");
-    if(!rows.length){
-      tbody.innerHTML = `<tr><td colspan="5" class="small">データなし</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = rows.map(r=>{
-      let date,item,amount,memo1,memo2;
-      if(Array.isArray(r)){
-        [date,item,amount,memo1,memo2]=r;
-      }else{
-        date=r.date; item=r.item; amount=r.amount; memo1=r.memo1; memo2=r.memo2;
-      }
-      return `
-        <tr>
-          <td>${escapeHtml(String(date||""))}</td>
-          <td>${escapeHtml(String(item||""))}</td>
-          <td class="right">${escapeHtml(String(amount ?? ""))}</td>
-          <td>${escapeHtml(String(memo1||""))}</td>
-          <td>${escapeHtml(String(memo2||""))}</td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  // ===== add / undo =====
-  function normalizeAmountText(s){
-    if(s==null) return "";
-    const map = {'０':'0','１':'1','２':'2','３':'3','４':'4','５':'5','６':'6','７':'7','８':'8','９':'9','，':',','－':'-','ー':'-'};
-    const z2h = String(s).replace(/[０-９，－ー]/g, c => map[c] ?? c);
-    return z2h.replace(/,/g,'').trim();
-  }
-
-  function lockInput(locked){
-    ["btnAdd","btnUndo","btnClear","btnAdd2","btnUndo2"].forEach(id=>{
-      const el=$(id); if(el) el.disabled = locked;
-    });
-  }
-
-  async function addEntry(){
-    if(!accessToken){ setStatus("access_token がありません", false); return; }
-
-    const item  = $("itemSelect").value;
-    const amountRaw = normalizeAmountText($("amountInput").value);
-    const amount = Number(amountRaw);
-    const memo1 = $("memo1Select").value;      // 固定4択
-    const memo2 = $("memo2Input").value || "";
-
-    if(!item){ setStatus("項目を選んでください", false); return; }
-    if(!Number.isFinite(amount)){ setStatus("金額を正しく入力してください", false); return; }
-
-    setStatus("追加中…");
-    setDetail("");
-    lockInput(true);
-
-    try{
-      const body = { op:"add", access_token: accessToken, item, amount, memo1, memo2 };
-      const json = await postJsonNoPreflight(`${GAS_URL}?action=api`, body);
-      setOutput(json);
-
-      if(json.ok){
-        setStatus("追加OK", true);
-        setDetail(json.msg || "追加しました");
-        $("amountInput").value="";
-        $("memo2Input").value="";
-        $("amountInput").focus();
-        await loadSummary();
-        await loadBreakdown(true);
-      }else{
-        setStatus("追加NG", false);
-        setDetail(json.error || "追加失敗");
-      }
-    }catch(e){
-      setStatus("追加通信エラー", false);
-      setDetail(String(e?.message || e));
-      setOutput({ ok:false, error:"add_failed", detail:String(e) });
-    }finally{
-      lockInput(false);
-    }
-  }
-
-  async function undoEntry(){
-    if(!accessToken){ setStatus("access_token がありません", false); return; }
-
-    setStatus("取り消し中…");
-    setDetail("");
-    lockInput(true);
-
-    try{
-      const body = { op:"undo", access_token: accessToken };
-      const json = await postJsonNoPreflight(`${GAS_URL}?action=api`, body);
-      setOutput(json);
-
-      if(json.ok){
-        setStatus("取り消しOK", true);
-        setDetail(json.msg || "取り消しました");
-        await loadSummary();
-        await loadBreakdown(true);
-      }else{
-        setStatus("取り消しNG", false);
-        setDetail(json.msg || json.error || "取り消し失敗");
-      }
-    }catch(e){
-      setStatus("取り消し通信エラー", false);
-      setDetail(String(e?.message || e));
-      setOutput({ ok:false, error:"undo_failed", detail:String(e) });
-    }finally{
-      lockInput(false);
-    }
-  }
-
-  function clearForm(){
-    $("amountInput").value="";
-    $("memo2Input").value="";
-    $("amountInput").focus();
-  }
-
-  // ===== 月切り替え =====
-  function setMonthToThis(){
-    setSelectedMonth(nowYYYYMM());
-    loadSummary();
-    loadBreakdown(true);
-  }
-  function setMonthToPrev(){
-    setSelectedMonth(prevYYYYMM(selectedMonth || nowYYYYMM()));
-    loadSummary();
-    loadBreakdown(true);
-  }
-  function applyMonth(){
-    const m = ($("monthInput").value||"").trim();
-    if(!isYYYYMM(m)){
-      setStatus("yyyyMMで入力してください（例：202601）", false);
-      return;
-    }
-    setSelectedMonth(m);
-    loadSummary();
-    loadBreakdown(true);
-  }
-
-  // ===== ページング =====
-  function pageNext(){
-    pageStart += pageLimit;
-    loadBreakdown(false);
-  }
-  function pagePrev(){
-    pageStart = Math.max(0, pageStart - pageLimit);
-    loadBreakdown(false);
-  }
-
-  // ===== 閉じる =====
-  function closeLiff(){
-    try{ if(liff.isInClient()) liff.closeWindow(); }catch(_){}
-  }
-
-  // ===== デバッグコピー =====
-  async function copyDebug(){
-    const info = {
-      gasUrl: GAS_URL,
-      liffId: LIFF_ID,
-      month: selectedMonth,
-      pageStart,
-      pageLimit,
-      isInClient: liff?.isInClient?.() ?? null,
-      isLoggedIn: liff?.isLoggedIn?.() ?? null,
-      hasAccessToken: !!accessToken,
-      displayName: profile?.displayName ?? null
-    };
-    try{
-      await navigator.clipboard.writeText(JSON.stringify(info,null,2));
-      setStatus("デバッグをコピーしました", true);
-    }catch(e){
-      setStatus("コピーできませんでした", false);
-      setDetail(String(e?.message||e));
-      setOutput(info);
-    }
-  }
-
-  function escapeHtml(s){
-    return String(s)
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#39;");
-  }
-
-  window.addEventListener("load", init);
+window.onload=init;
 </script>
-
 </body>
 </html>
