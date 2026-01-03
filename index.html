@@ -3,783 +3,284 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Household Budget MiniApp</title>
-
-  <!-- LIFF SDK -->
+  <title>家計簿 MiniApp</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <style>
-    :root{
-      --bg:#0b0c10;
-      --card:#14161d;
-      --card2:#10121a;
-      --text:#e9ecf1;
-      --muted:#a8b0bf;
-      --accent:#6ee7ff;
-      --danger:#ff6b6b;
-      --ok:#5effa1;
-      --line:#2a2f3a;
-      --btn:#1e2230;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius:14px;
-    }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, "Noto Sans JP", sans-serif;
-      background: radial-gradient(1200px 800px at 30% -10%, rgba(110,231,255,.18), transparent 60%),
-                  radial-gradient(900px 600px at 100% 0%, rgba(94,255,161,.12), transparent 55%),
-                  var(--bg);
-      color:var(--text);
-    }
-    .wrap{ max-width:960px; margin:0 auto; padding:16px; }
-    .top{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-    .title{
-      display:flex; align-items:baseline; gap:10px;
-    }
-    .title h1{ font-size:18px; margin:0; letter-spacing:.2px; }
-    .pill{
-      font-size:12px; padding:6px 10px; border-radius:999px;
-      background:rgba(110,231,255,.12); border:1px solid rgba(110,231,255,.25); color:var(--accent);
-    }
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:14px;
-    }
-    .row{ display:flex; gap:12px; flex-wrap:wrap; }
-    .col{ flex:1 1 320px; min-width:280px; }
-    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
-    input, select, textarea{
-      width:100%;
-      box-sizing:border-box;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(20,22,29,.8);
-      color:var(--text);
-      outline:none;
-    }
-    textarea{ min-height:90px; resize:vertical; }
-    .btns{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-    button{
-      appearance:none; border:1px solid rgba(255,255,255,.10);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      color:var(--text);
-      border-radius:12px;
-      padding:11px 14px;
-      cursor:pointer;
-      font-weight:700;
-    }
-    button.primary{
-      border:1px solid rgba(110,231,255,.35);
-      background:linear-gradient(180deg, rgba(110,231,255,.22), rgba(110,231,255,.10));
-      color:#dffbff;
-    }
-    button.danger{
-      border:1px solid rgba(255,107,107,.35);
-      background:linear-gradient(180deg, rgba(255,107,107,.22), rgba(255,107,107,.10));
-    }
-    button:disabled{ opacity:.55; cursor:not-allowed; }
-    .tabs{
-      display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 10px;
-    }
-    .tab{
-      font-size:12px; padding:8px 12px; border-radius:999px;
-      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
-      color:var(--muted); cursor:pointer; user-select:none;
-    }
-    .tab.active{
-      color:var(--text);
-      border-color:rgba(110,231,255,.35);
-      background:rgba(110,231,255,.10);
-    }
-    .status{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-      padding:10px 12px;
-      border-radius:12px;
-      background:rgba(16,18,26,.65);
-      border:1px solid rgba(255,255,255,.06);
-      margin:10px 0 14px;
-    }
-    .status .left{
-      display:flex; flex-direction:column; gap:4px;
-      min-width:280px;
-    }
-    .status .state{
-      font-size:12px; color:var(--muted);
-    }
-    .status .state strong{ color:var(--text); }
-    .status .log{
-      font-size:12px; color:var(--accent);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      max-width:640px;
-    }
-    .hint{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.45; }
-    .ok{ color:var(--ok); }
-    .ng{ color:var(--danger); }
-
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      overflow:hidden;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(16,18,26,.45);
-    }
-    thead th{
-      text-align:left;
-      font-size:12px;
-      color:var(--muted);
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,.07);
-      background:rgba(255,255,255,.03);
-    }
-    tbody td{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:13px;
-    }
-    tbody tr:last-child td{ border-bottom:none; }
-    .right{text-align:right;}
-    .imgWrap{
-      margin-top:10px;
-      border-radius:12px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.25);
-    }
-    .imgWrap img{ width:100%; display:block; }
-    .debug{
-      margin-top:14px;
-      font-size:12px;
-      color:var(--muted);
-      white-space:pre-wrap;
-      word-break:break-word;
-      background:rgba(0,0,0,.25);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:12px;
-      padding:10px;
-      display:none;
-    }
-    .debug.show{ display:block; }
-    .mini{
-      font-size:11px; color:var(--muted);
-    }
+    body{font-family:system-ui, -apple-system, "Segoe UI", sans-serif; margin:16px;}
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    select,input,button{font-size:16px; padding:10px;}
+    button{cursor:pointer;}
+    .card{border:1px solid #ddd; border-radius:12px; padding:12px; margin:12px 0;}
+    .muted{color:#666; font-size:13px;}
+    .ok{color:#0a7;}
+    .ng{color:#c33;}
+    img{max-width:100%; border-radius:12px; border:1px solid #ddd;}
   </style>
 </head>
-
 <body>
-<div class="wrap">
+  <h2>家計簿 MiniApp</h2>
 
-  <div class="top">
-    <div class="title">
-      <h1>家計簿 MiniApp</h1>
-      <div class="pill" id="pillEnv">LIFF</div>
-    </div>
-    <div class="pill" id="pillUser">未ログイン</div>
-  </div>
-
-  <div class="status card">
-    <div class="left">
-      <div class="state">状態：<strong id="stateText">初期化中</strong></div>
-      <div class="log" id="logText">LIFF SDKを起動しています…</div>
-    </div>
-    <div class="btns" style="margin:0;">
-      <button id="btnReload" class="primary">更新</button>
-      <button id="btnToggleDebug">デバッグ表示</button>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" data-tab="add">追加</div>
-    <div class="tab" data-tab="summary">合計</div>
-    <div class="tab" data-tab="breakdown">内訳</div>
-    <div class="tab" data-tab="chart">グラフ</div>
-  </div>
-
-  <!-- ADD -->
-  <div id="tab-add" class="card">
+  <div class="card">
     <div class="row">
-      <div class="col">
-        <label>対象月</label>
-        <select id="selMonthMode">
-          <option value="current">今月</option>
-          <option value="prev">先月</option>
-          <option value="custom">指定（YYYYMM）</option>
-        </select>
-      </div>
-      <div class="col">
-        <label>YYYYMM（指定時のみ）</label>
-        <input id="inpMonthCustom" placeholder="例：202601" disabled />
-      </div>
+      <button id="btnInit">初期化</button>
+      <button id="btnRefresh">⏱ 更新</button>
+      <span id="status" class="muted">未初期化</span>
     </div>
-
-    <div class="row">
-      <div class="col">
-        <label>項目</label>
-        <select id="selItem">
-          <option value="">読み込み中…</option>
-        </select>
-      </div>
-      <div class="col">
-        <label>金額</label>
-        <input id="inpAmount" inputmode="numeric" placeholder="例：1200 / １，２００ / 1,200" />
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col">
-        <label>備考1（ドロップダウン復活）</label>
-        <select id="selMemo1">
-          <option value="">なし</option>
-          <option value="かずき">かずき</option>
-          <option value="かずきカード">かずきカード</option>
-          <option value="みく">みく</option>
-          <option value="みくカード">みくカード</option>
-        </select>
-        <div class="hint">※GAS側は <code>memo1</code> をそのまま保存します。</div>
-      </div>
-      <div class="col">
-        <label>備考2（自由入力）</label>
-        <input id="inpMemo2" placeholder="例：スーパー / Amazon / 立替など（任意）" />
-      </div>
-    </div>
-
-    <div class="btns">
-      <button id="btnAdd" class="primary">追加する</button>
-      <button id="btnUndo" class="danger">直前を取り消す</button>
-    </div>
-
-    <div class="hint">
-      追加ができない原因の多くは「POSTのbodyがGAS想定とズレてる」か「access_token未取得」です。<br/>
-      このindexは <code>POST { op:"add", access_token, item, amount, memo1, memo2, month? }</code> で送ります（GAS側の新仕様に合わせ済み）。
-    </div>
+    <div id="detail" class="muted" style="margin-top:6px;"></div>
   </div>
 
-  <!-- SUMMARY -->
-  <div id="tab-summary" class="card" style="display:none;">
-    <div class="row">
-      <div class="col">
-        <label>対象月（YYYYMM）</label>
-        <input id="inpSummaryMonth" placeholder="空なら今月" />
-      </div>
-      <div class="col">
-        <label>&nbsp;</label>
-        <button id="btnLoadSummary" class="primary" style="width:100%;">合計を取得</button>
-      </div>
+  <div class="card">
+    <h3>追加</h3>
+    <div class="row" style="margin-bottom:8px;">
+      <select id="selItem"></select>
+      <input id="inpAmount" type="number" inputmode="numeric" placeholder="金額" />
     </div>
-
-    <div class="hint" id="summaryOverall"></div>
-    <div style="margin-top:10px; overflow:auto;">
-      <table id="tblSummary">
-        <thead>
-          <tr>
-            <th>項目</th>
-            <th class="right">予算</th>
-            <th class="right">支出</th>
-            <th class="right">残額</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <div class="row" style="margin-bottom:8px;">
+      <select id="selMemo1">
+        <option value="">（備考1）</option>
+        <option value="かずき">かずき</option>
+        <option value="かずきカード">かずきカード</option>
+        <option value="みく">みく</option>
+        <option value="みくカード">みくカード</option>
+        <option value="自分で入力">自分で入力</option>
+      </select>
+      <input id="inpMemo1" placeholder="備考1（自由入力）" style="display:none;" />
+      <input id="inpMemo2" placeholder="備考2（任意）" />
+      <button id="btnAdd">追加</button>
+      <button id="btnUndo">取り消し</button>
     </div>
+    <div id="addMsg" class="muted"></div>
   </div>
 
-  <!-- BREAKDOWN -->
-  <div id="tab-breakdown" class="card" style="display:none;">
+  <div class="card">
+    <h3>合計</h3>
     <div class="row">
-      <div class="col">
-        <label>対象月（YYYYMM）</label>
-        <input id="inpBreakMonth" placeholder="空なら今月" />
-      </div>
-      <div class="col">
-        <label>件数</label>
-        <select id="selBreakLimit">
-          <option value="30">30</option>
-          <option value="50" selected>50</option>
-          <option value="100">100</option>
-        </select>
-      </div>
-      <div class="col">
-        <label>&nbsp;</label>
-        <button id="btnLoadBreak" class="primary" style="width:100%;">内訳を取得</button>
-      </div>
+      <input id="inpSummaryMonth" placeholder="YYYYMM（空で今月）" />
+      <button id="btnSummary">表示</button>
     </div>
-
-    <div style="margin-top:10px; overflow:auto;">
-      <table id="tblBreak">
-        <thead>
-          <tr>
-            <th>日付</th>
-            <th>項目</th>
-            <th class="right">金額</th>
-            <th>備考1</th>
-            <th>備考2</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div class="btns">
-      <button id="btnPrevPage">前へ</button>
-      <button id="btnNextPage">次へ</button>
-      <div class="mini" id="breakPageInfo" style="align-self:center;"></div>
-    </div>
+    <pre id="summaryOut" style="white-space:pre-wrap;"></pre>
   </div>
 
-  <!-- CHART -->
-  <div id="tab-chart" class="card" style="display:none;">
+  <div class="card">
+    <h3>内訳</h3>
     <div class="row">
-      <div class="col">
-        <label>対象月（YYYYMM）</label>
-        <input id="inpChartMonth" placeholder="空なら今月" />
-      </div>
-      <div class="col">
-        <label>&nbsp;</label>
-        <button id="btnLoadChart" class="primary" style="width:100%;">グラフを取得</button>
-      </div>
+      <input id="inpBreakMonth" placeholder="YYYYMM（空で今月）" />
+      <button id="btnBreak">表示</button>
     </div>
-
-    <div class="hint" id="chartHint">※GASの <code>op=chart_overall</code> で生成された画像URLを表示します。</div>
-    <div class="imgWrap" id="chartImgWrap" style="display:none;">
-      <img id="chartImg" alt="残額グラフ" />
-    </div>
+    <pre id="breakOut" style="white-space:pre-wrap;"></pre>
   </div>
 
-  <div id="debugBox" class="debug"></div>
-
-</div>
+  <div class="card">
+    <h3>グラフ（全体残額）</h3>
+    <div class="row">
+      <input id="inpChartMonth" placeholder="YYYYMM（空で今月）" />
+      <button id="btnChart">更新</button>
+    </div>
+    <div id="chartImgWrap" style="margin-top:10px; display:none;">
+      <img id="chartImg" alt="chart" />
+    </div>
+    <div id="chartMsg" class="muted"></div>
+  </div>
 
 <script>
-/**
- * ★ここだけはあなたの環境に合わせて入れてOK
- * - LIFF_ID: LIFFアプリのID（LINE DevelopersのLIFFタブにあるやつ）
- * - WEBAPP_URL: GAS Webアプリの /exec URL（デプロイ後のURL）
- *
- * ※前に聞いてくれた「LIFF_ID と WEBAPP_URL 何だったけ？」の答えがこれ。
- */
-const LIFF_ID   = "2008812269-var864Dv";
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // 例: https://script.google.com/macros/s/XXXXX/exec
+  // ★ あなたの環境の値を設定
+  const LIFF_ID = "2008812269-var864Dv";
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
 
-// ====== 状態 ======
-let accessToken = "";
-let userId = "";
-let itemsCache = [];
-let breakdownStart = 0;
-let breakdownTotal = 0;
-let breakdownLimit = 50;
+  let accessToken = "";
 
-const el = (id)=>document.getElementById(id);
+  const el = (id)=>document.getElementById(id);
 
-function setState(text, log, kind="") {
-  el("stateText").textContent = text;
-  el("logText").textContent = log || "";
-  if (kind === "ok") el("logText").className = "log ok";
-  else if (kind === "ng") el("logText").className = "log ng";
-  else el("logText").className = "log";
-}
-
-function dbg(obj) {
-  const box = el("debugBox");
-  const s = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
-  box.textContent = s;
-}
-
-function appendDbg(line) {
-  const box = el("debugBox");
-  box.textContent = (box.textContent ? box.textContent + "\n" : "") + line;
-}
-
-// ====== API呼び出し（GAS: action=api） ======
-async function apiGet(op, params={}) {
-  if (!accessToken) throw new Error("access_token がありません（LIFF初期化未完了）");
-  const url = new URL(WEBAPP_URL);
-  url.searchParams.set("action", "api");
-  url.searchParams.set("op", op);
-  url.searchParams.set("access_token", accessToken);
-  Object.keys(params).forEach(k => {
-    if (params[k] !== undefined && params[k] !== null && String(params[k]).length) {
-      url.searchParams.set(k, params[k]);
-    }
-  });
-
-  setState("通信中", `GET ${op} を実行中…`, "");
-  const res = await fetch(url.toString(), { method:"GET" });
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); } catch(e) { throw new Error("JSON以外が返りました: " + text.slice(0,200)); }
-  if (!json.ok) throw new Error(json.error || "API error");
-  return json;
-}
-
-async function apiPost(op, body={}) {
-  if (!accessToken) throw new Error("access_token がありません");
-
-  setState("通信中", `POST(${op}) を実行中…`, "");
-
-  const url = new URL(WEBAPP_URL);
-  url.searchParams.set("action", "api");
-  url.searchParams.set("op", op);
-  url.searchParams.set("access_token", accessToken);
-
-  Object.keys(body).forEach(k => {
-    if (body[k] !== undefined && body[k] !== null) {
-      url.searchParams.set(k, body[k]);
-    }
-  });
-
-  const res = await fetch(url.toString(), { method: "GET" });
-  const text = await res.text();
-
-  let json;
-  try { json = JSON.parse(text); }
-  catch {
-    throw new Error("JSON以外が返りました: " + text.slice(0,200));
+  function setState(title, detail, cls=""){
+    const st = el("status");
+    st.textContent = title;
+    st.className = "muted " + cls;
+    el("detail").textContent = detail || "";
   }
 
-  if (!json.ok) throw new Error(json.error || json.msg || "API error");
-  return json;
-}
-
-// ====== UI ======
-function currentYm() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  return `${y}${m}`;
-}
-function prevYm() {
-  const d = new Date();
-  d.setMonth(d.getMonth()-1);
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  return `${y}${m}`;
-}
-function getAddMonthOrNull() {
-  const mode = el("selMonthMode").value;
-  if (mode === "current") return null;
-  if (mode === "prev") return prevYm();
-  const v = (el("inpMonthCustom").value || "").trim();
-  return v ? v : null;
-}
-
-function switchTab(tab) {
-  const ids = ["add","summary","breakdown","chart"];
-  ids.forEach(t => {
-    el("tab-"+t).style.display = (t===tab) ? "" : "none";
-  });
-  document.querySelectorAll(".tab").forEach(x=>{
-    x.classList.toggle("active", x.dataset.tab===tab);
-  });
-}
-
-function fillItemsSelect(items) {
-  const sel = el("selItem");
-  sel.innerHTML = "";
-  const opt0 = document.createElement("option");
-  opt0.value = "";
-  opt0.textContent = "選択してください";
-  sel.appendChild(opt0);
-
-  items.forEach(it=>{
-    const o = document.createElement("option");
-    o.value = it;
-    o.textContent = it;
-    sel.appendChild(o);
-  });
-}
-
-function yen(n) {
-  const x = Number(n||0);
-  return x.toLocaleString("ja-JP") + "円";
-}
-
-// ====== データ取得 ======
-async function loadItems() {
-  const r = await apiGet("items");
-  itemsCache = r.items || [];
-  fillItemsSelect(itemsCache);
-  setState("準備完了", "項目リストを更新しました", "ok");
-  appendDbg("[OK] items loaded");
-}
-
-async function loadWhoami() {
-  const r = await apiGet("whoami");
-  userId = r.userId || "";
-  el("pillUser").textContent = userId ? ("user: " + userId.slice(0,10) + "…") : "user: ?";
-  appendDbg("[OK] whoami: " + userId);
-}
-
-async function loadSummary() {
-  const month = (el("inpSummaryMonth").value || "").trim() || currentYm();
-  const r = await apiGet("summary", { month });
-
-  el("summaryOverall").innerHTML =
-    `対象：<strong>${month.slice(0,4)}/${month.slice(4)}</strong>　全体残額：<strong>${yen(r.overall)}</strong>`;
-
-  const tb = el("tblSummary").querySelector("tbody");
-  tb.innerHTML = "";
-  (r.rows || []).forEach(row=>{
-    const tr = document.createElement("tr");
-    const neg = Number(row.remain||0) < 0;
-    tr.innerHTML = `
-      <td>${row.name}</td>
-      <td class="right">${yen(row.budget)}</td>
-      <td class="right">${yen(row.spend)}</td>
-      <td class="right" style="${neg ? "color:var(--danger); font-weight:800;" : "font-weight:800;"}">${yen(row.remain)}</td>
-    `;
-    tb.appendChild(tr);
-  });
-
-  setState("準備完了", `合計を更新しました（${month}）`, "ok");
-}
-
-async function loadBreakdown(reset=true) {
-  const month = (el("inpBreakMonth").value || "").trim() || currentYm();
-  breakdownLimit = Number(el("selBreakLimit").value || 50);
-  if (reset) breakdownStart = 0;
-
-  const r = await apiGet("breakdown", { month, start: breakdownStart, limit: breakdownLimit });
-
-  breakdownTotal = Number(r.total || 0);
-
-  const tb = el("tblBreak").querySelector("tbody");
-  tb.innerHTML = "";
-  (r.rows || []).forEach(row=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.date || ""}</td>
-      <td>${row.item || ""}</td>
-      <td class="right">${yen(row.amount)}</td>
-      <td>${row.memo1 || ""}</td>
-      <td>${row.memo2 || ""}</td>
-    `;
-    tb.appendChild(tr);
-  });
-
-  const s = Number(r.start||0);
-  const l = Number(r.limit||0);
-  const e = Math.min(s + l, breakdownTotal);
-  el("breakPageInfo").textContent = `${breakdownTotal}件中 ${s+1}〜${e}件`;
-
-  el("btnPrevPage").disabled = (s <= 0);
-  el("btnNextPage").disabled = !r.hasMore;
-
-  setState("準備完了", `内訳を更新しました（${month} / ${s}-${e}）`, "ok");
-}
-
-async function loadChart() {
-  const month = (el("inpChartMonth").value || "").trim() || currentYm();
-  const r = await apiGet("chart_overall", { month });
-
-  if (!r.url) throw new Error("グラフURLが空です");
-
-  const img = el("chartImg");
-  img.src = r.url + "&cache=" + Date.now(); // ←重要
-  img.onload = () => {
-    el("chartImgWrap").style.display = "";
-  };
-  img.onerror = () => {
-    setState("表示失敗", "グラフ画像を読み込めませんでした", "ng");
-  };
-
-  setState("準備完了", `グラフを更新しました（${month}）`, "ok");
-}
-
-
-// ====== 追加・取り消し ======
-async function addEntry() {
-  const item = (el("selItem").value || "").trim();
-  const amountRaw = (el("inpAmount").value || "").trim();
-  const memo1 = el("selMemo1").value || "";
-  const memo2 = (el("inpMemo2").value || "").trim();
-
-  if (!item) throw new Error("項目を選択してください");
-  if (!amountRaw) throw new Error("金額を入力してください");
-
-  // ★重要：amountは「文字列のまま」送る（GAS側が parseAmount で安全に処理）
-  const month = getAddMonthOrNull();
-
-  const r = await apiPost("add", {
-    item,
-    amount: amountRaw,
-    memo1,
-    memo2,
-    month: month || undefined
-  });
-
-  setState("追加完了", r.msg || "書き込み完了", "ok");
-  el("inpAmount").value = "";
-  el("inpMemo2").value = "";
-  el("selMemo1").value = "";
-
-  // ついでに一覧更新（気持ちいいので）
-  try { await loadBreakdown(true); } catch(e) {}
-}
-
-async function undoEntry() {
-  const r = await apiPost("undo", {});
-  setState("取り消し完了", r.msg || "取り消しました", "ok");
-  try { await loadBreakdown(true); } catch(e) {}
-}
-
-// ====== 初期化 ======
-async function init() {
-  el("pillEnv").textContent = "LIFF";
-  dbg("");
-
-  if (!LIFF_ID || LIFF_ID.includes("REPLACE")) {
-    setState("設定不足", "LIFF_ID が未設定です（index内の LIFF_ID を入れてください）", "ng");
-    appendDbg("[NG] LIFF_ID not set");
-    return;
-  }
-  if (!WEBAPP_URL || WEBAPP_URL.includes("REPLACE")) {
-    setState("設定不足", "WEBAPP_URL が未設定です（GASの /exec URL を入れてください）", "ng");
-    appendDbg("[NG] WEBAPP_URL not set");
-    return;
+  function currentYm(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    return ""+y+m;
   }
 
-  setState("初期化中", "LIFFに接続しています…", "");
-  await liff.init({ liffId: LIFF_ID });
-
-  // ログインしてなければログインへ
-  if (!liff.isLoggedIn()) {
-    setState("ログイン必要", "LINEログインへ移動します…", "");
-    liff.login();
-    return;
-  }
-
-  accessToken = liff.getAccessToken() || "";
-  if (!accessToken) {
-    setState("初期化失敗", "access_token が取得できませんでした", "ng");
-    appendDbg("[NG] accessToken empty");
-    return;
-  }
-
-  setState("初期化完了", "ユーザー照合中…", "");
-  appendDbg("[OK] accessToken obtained");
-
-  // whoami（許可ユーザーかどうかもGASで判定される）
-  try {
-    await loadWhoami();
-  } catch (e) {
-    setState("利用不可", String(e.message || e), "ng");
-    appendDbg("[NG] whoami failed: " + (e.message||e));
-    return;
-  }
-
-  // items読み込み（項目プルダウン）
-  try {
-    await loadItems();
-  } catch (e) {
-    setState("準備未完了", "項目の取得に失敗：" + String(e.message || e), "ng");
-    appendDbg("[NG] items failed: " + (e.message||e));
-  }
-
-  // 合計・内訳がOKとのことなので、初期表示は内訳だけ軽く更新
-  try {
-    await loadBreakdown(true);
-  } catch(e) {
-    appendDbg("[WARN] breakdown init failed: " + (e.message||e));
-  }
-
-  setState("準備完了", "操作できます（追加 / 合計 / 内訳 / グラフ）", "ok");
-}
-
-function wire() {
-  // tabs
-  document.querySelectorAll(".tab").forEach(x=>{
-    x.addEventListener("click", ()=>{
-      switchTab(x.dataset.tab);
+  async function apiGet(op, params={}){
+    if (!accessToken) throw new Error("access_token がありません");
+    const url = new URL(WEBAPP_URL);
+    url.searchParams.set("action","api");
+    url.searchParams.set("op", op);
+    url.searchParams.set("access_token", accessToken);
+    Object.keys(params).forEach(k=>{
+      if (params[k] !== undefined && params[k] !== null) url.searchParams.set(k, params[k]);
     });
-  });
 
-  // month custom enable
-  el("selMonthMode").addEventListener("change", ()=>{
-    const m = el("selMonthMode").value;
-    el("inpMonthCustom").disabled = (m !== "custom");
-  });
+    const res = await fetch(url.toString(), { method:"GET" });
+    const text = await res.text();
 
-  // buttons
-  el("btnReload").addEventListener("click", async ()=>{
-    try{
-      setState("更新中", "項目・表示を再読み込みしています…", "");
-      await loadItems();
-      // 表示中タブに応じて更新
-      const active = document.querySelector(".tab.active").dataset.tab;
-      if (active === "summary") await loadSummary();
-      if (active === "breakdown") await loadBreakdown(true);
-      if (active === "chart") await loadChart();
-      setState("準備完了", "更新しました", "ok");
-    }catch(e){
-      setState("更新失敗", String(e.message||e), "ng");
-      appendDbg("[NG] reload failed: " + (e.message||e));
+    let json;
+    try { json = JSON.parse(text); }
+    catch { throw new Error("JSON以外が返りました: " + text.slice(0,200)); }
+
+    if (!json.ok) throw new Error(json.error || json.msg || "API error");
+    return json;
+  }
+
+  // ★ POST不安定対策：add/undo も GET op=add/op=undo に寄せる
+  async function apiAdd(body){
+    return await apiGet("add", body);
+  }
+  async function apiUndo(){
+    return await apiGet("undo", {});
+  }
+
+  async function init(){
+    setState("初期化中", "LIFF初期化…");
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isLoggedIn()){
+      setState("ログインが必要", "ログインへ遷移します…", "ng");
+      liff.login();
+      return;
     }
-  });
 
-  el("btnToggleDebug").addEventListener("click", ()=>{
-    el("debugBox").classList.toggle("show");
-  });
+    accessToken = liff.getAccessToken();
+    const who = await apiGet("whoami", {});
+    setState("準備完了", `userId: ${who.userId}`, "ok");
 
-  el("btnAdd").addEventListener("click", async ()=>{
-    try { await addEntry(); }
-    catch(e){ setState("追加失敗", String(e.message||e), "ng"); appendDbg("[NG] add: "+(e.message||e)); }
-  });
-
-  el("btnUndo").addEventListener("click", async ()=>{
-    try { await undoEntry(); }
-    catch(e){ setState("取り消し失敗", String(e.message||e), "ng"); appendDbg("[NG] undo: "+(e.message||e)); }
-  });
-
-  el("btnLoadSummary").addEventListener("click", async ()=>{
-    try { await loadSummary(); }
-    catch(e){ setState("取得失敗", String(e.message||e), "ng"); appendDbg("[NG] summary: "+(e.message||e)); }
-  });
-
-  el("btnLoadBreak").addEventListener("click", async ()=>{
-    try { await loadBreakdown(true); }
-    catch(e){ setState("取得失敗", String(e.message||e), "ng"); appendDbg("[NG] breakdown: "+(e.message||e)); }
-  });
-
-  el("btnPrevPage").addEventListener("click", async ()=>{
-    try{
-      breakdownStart = Math.max(0, breakdownStart - breakdownLimit);
-      await loadBreakdown(false);
-    }catch(e){ setState("取得失敗", String(e.message||e), "ng"); appendDbg("[NG] prev: "+(e.message||e)); }
-  });
-
-  el("btnNextPage").addEventListener("click", async ()=>{
-    try{
-      breakdownStart = breakdownStart + breakdownLimit;
-      await loadBreakdown(false);
-    }catch(e){ setState("取得失敗", String(e.message||e), "ng"); appendDbg("[NG] next: "+(e.message||e)); }
-  });
-
-  el("btnLoadChart").addEventListener("click", async ()=>{
-    try { await loadChart(); }
-    catch(e){ setState("取得失敗", String(e.message||e), "ng"); appendDbg("[NG] chart: "+(e.message||e)); }
-  });
-
-  // Enterで追加（PC用）
-  ["inpAmount","inpMemo2"].forEach(id=>{
-    el(id).addEventListener("keydown", (ev)=>{
-      if (ev.key === "Enter") el("btnAdd").click();
+    // items
+    const items = await apiGet("items", {});
+    const sel = el("selItem");
+    sel.innerHTML = "";
+    items.items.forEach(it=>{
+      const opt = document.createElement("option");
+      opt.value = it;
+      opt.textContent = it;
+      sel.appendChild(opt);
     });
-  });
-}
+  }
 
-wire();
-init().catch(e=>{
-  setState("起動失敗", String(e.message||e), "ng");
-  appendDbg("[FATAL] " + (e.message||e));
-});
+  function bind(){
+    el("btnInit").onclick = ()=>init().catch(e=>setState("失敗", String(e.message||e), "ng"));
+
+    el("btnRefresh").onclick = async ()=>{
+      try{
+        setState("更新中", "合計/内訳/グラフの更新を実行…");
+        await loadSummary();
+        await loadBreakdown();
+        await loadChart();
+        setState("更新完了", "表示を更新しました", "ok");
+      }catch(e){
+        setState("更新失敗", String(e.message||e), "ng");
+      }
+    };
+
+    el("selMemo1").onchange = ()=>{
+      const v = el("selMemo1").value;
+      el("inpMemo1").style.display = (v==="自分で入力") ? "" : "none";
+      if (v !== "自分で入力") el("inpMemo1").value = "";
+    };
+
+    el("btnAdd").onclick = async ()=>{
+      try{
+        const item = el("selItem").value;
+        const amount = Number(el("inpAmount").value);
+        let memo1 = el("selMemo1").value;
+        if (memo1 === "自分で入力") memo1 = el("inpMemo1").value.trim();
+        if (memo1 === "（備考1）") memo1 = "";
+        const memo2 = el("inpMemo2").value.trim();
+
+        setState("通信中", "追加を送信しています…");
+        const r = await apiAdd({ item, amount, memo1, memo2, month: currentYm() });
+
+        el("addMsg").textContent = "✅ " + r.msg;
+        setState("追加OK", r.msg, "ok");
+
+        // 追加後に再表示
+        await loadSummary();
+        await loadBreakdown();
+        await loadChart();
+
+      }catch(e){
+        el("addMsg").textContent = "❌ " + String(e.message||e);
+        setState("追加失敗", String(e.message||e), "ng");
+      }
+    };
+
+    el("btnUndo").onclick = async ()=>{
+      try{
+        setState("通信中", "取り消しを実行しています…");
+        const r = await apiUndo();
+        el("addMsg").textContent = (r.ok ? "✅ " : "❌ ") + r.msg;
+        setState("取り消し結果", r.msg, r.ok ? "ok" : "ng");
+        await loadSummary();
+        await loadBreakdown();
+        await loadChart();
+      }catch(e){
+        setState("取り消し失敗", String(e.message||e), "ng");
+      }
+    };
+
+    el("btnSummary").onclick = ()=>loadSummary().catch(e=>setState("合計失敗", String(e.message||e), "ng"));
+    el("btnBreak").onclick = ()=>loadBreakdown().catch(e=>setState("内訳失敗", String(e.message||e), "ng"));
+    el("btnChart").onclick = ()=>loadChart().catch(e=>setState("グラフ失敗", String(e.message||e), "ng"));
+  }
+
+  async function loadSummary(){
+    const month = (el("inpSummaryMonth").value || "").trim() || currentYm();
+    const r = await apiGet("summary", { month });
+
+    const lines = [];
+    lines.push(`【${month} 合計】 全体残額: ${Number(r.overall||0).toLocaleString()}円`);
+    r.rows.forEach(x=>{
+      lines.push(`${x.name}  予算:${Number(x.budget||0).toLocaleString()}  支出:${Number(x.spend||0).toLocaleString()}  残額:${Number(x.remain||0).toLocaleString()}`);
+    });
+    el("summaryOut").textContent = lines.join("\n");
+  }
+
+  async function loadBreakdown(){
+    const month = (el("inpBreakMonth").value || "").trim() || currentYm();
+    const r = await apiGet("breakdown", { month, start:0, limit:50 });
+
+    const fmt = (d)=>{
+      // Date or string を "MM/dd" に寄せる
+      try{
+        const dd = new Date(d);
+        if (!isNaN(dd.getTime())){
+          const m = String(dd.getMonth()+1).padStart(2,"0");
+          const day = String(dd.getDate()).padStart(2,"0");
+          return `${m}/${day}`;
+        }
+      }catch(_){}
+      return String(d);
+    };
+
+    const lines = [];
+    lines.push(`【${month} 内訳】 件数:${r.total}`);
+    r.rows.forEach((x,i)=>{
+      lines.push(`${i+1}. ${fmt(x.date)}  ${x.item}  ${Number(x.amount||0).toLocaleString()}円  ${x.memo1||""}  ${x.memo2||""}`);
+    });
+    el("breakOut").textContent = lines.join("\n");
+  }
+
+  async function loadChart(){
+    const month = (el("inpChartMonth").value || "").trim() || currentYm();
+    el("chartMsg").textContent = "更新中…";
+
+    const r = await apiGet("chart_overall", { month });
+    const img = el("chartImg");
+    const wrap = el("chartImgWrap");
+
+    wrap.style.display = "none";
+    img.onload = ()=>{ wrap.style.display=""; el("chartMsg").textContent = "✅ グラフを更新しました"; };
+    img.onerror = ()=>{ el("chartMsg").textContent = "❌ 画像は読み込めませんでした"; };
+
+    // ★ 同一オリジン配信URL（GASが image/jpeg で返す）なのでLIFFで安定
+    img.src = r.url + "&cache=" + Date.now();
+  }
+
+  bind();
+  setState("未初期化", "「初期化」を押してください");
 </script>
 </body>
 </html>
