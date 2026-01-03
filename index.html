@@ -8,48 +8,70 @@
 
 <style>
   body{margin:0;background:#f6f7f9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;}
-  .wrap{max-width:860px;margin:auto;padding:16px 16px 96px;}
+  .wrap{max-width:920px;margin:auto;padding:16px 16px 96px;}
   .card{background:#fff;border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 6px 22px rgba(0,0,0,.06);}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
   .spacer{flex:1;}
   button{height:42px;padding:0 14px;border-radius:12px;border:1px solid #d0d5dd;background:#fff;cursor:pointer;}
   button:disabled{opacity:.55;cursor:not-allowed;}
-  .primary{background:#1DB446;color:#fff;border-color:#1DB446;font-weight:700;}
-  .danger{border-color:#f2b8b5;color:#d92d20;font-weight:700;}
+  .primary{background:#1DB446;color:#fff;border-color:#1DB446;font-weight:800;}
+  .danger{border-color:#f2b8b5;color:#d92d20;font-weight:800;background:#fff;}
   .ghost{background:#fff;}
   input,select{height:44px;width:100%;border-radius:12px;border:1px solid #d0d5dd;padding:0 12px;box-sizing:border-box;background:#fff;}
   .small{font-size:12px;color:#667085;}
-  .title{font-weight:800;font-size:18px;}
+  .title{font-weight:900;font-size:18px;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;}
   table{width:100%;border-collapse:collapse;}
   th,td{border-bottom:1px solid #eef2f6;padding:9px 8px;font-size:13px;vertical-align:top;}
-  th{color:#667085;text-align:left;font-weight:700;}
+  th{color:#667085;text-align:left;font-weight:800;}
   .right{text-align:right;}
-  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:700;}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:800;}
+  .ok{color:#027a48;font-weight:900;}
+  .ng{color:#b42318;font-weight:900;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media (max-width:720px){ .grid2{grid-template-columns:1fr;} }
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
-  <!-- ステータス + 月切り替え -->
+  <!-- ヘッダ / 月切り替え -->
   <div class="card">
     <div class="row">
       <div class="title">家計簿</div>
       <div class="spacer"></div>
       <span class="pill" id="monthLabel">----</span>
     </div>
-    <div style="height:8px"></div>
-    <div class="row">
-      <button id="btnThisMonth" class="ghost" onclick="setMonthToThis()" disabled>今月</button>
-      <button id="btnPrevMonth" class="ghost" onclick="setMonthToPrev()" disabled>先月</button>
-      <div class="spacer"></div>
-      <button class="ghost" onclick="copyDebug()">デバッグコピー</button>
+
+    <div style="height:10px"></div>
+
+    <div class="grid2">
+      <div class="row">
+        <button id="btnThisMonth" class="ghost" onclick="setMonthToThis()" disabled>今月</button>
+        <button id="btnPrevMonth" class="ghost" onclick="setMonthToPrev()" disabled>先月</button>
+        <button id="btnReload" class="ghost" onclick="refreshAll()" disabled>再読み込み</button>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;min-width:180px">
+          <div class="small">YYYYMM で指定</div>
+          <input id="ymInput" placeholder="例：202510" inputmode="numeric">
+        </div>
+        <button class="primary" id="btnApplyYm" onclick="applyYm()" disabled>適用</button>
+      </div>
     </div>
 
     <div style="height:10px"></div>
     <div id="status" class="mono">初期化中…</div>
     <div class="small" id="detail"></div>
+
+    <div style="height:6px"></div>
+    <div class="row">
+      <button class="ghost" onclick="copyDebug()">デバッグコピー</button>
+      <div class="spacer"></div>
+      <span class="small" id="loginName"></span>
+    </div>
   </div>
 
   <!-- 入力 -->
@@ -70,7 +92,7 @@
         <input id="amount" inputmode="numeric" placeholder="例：1200">
       </div>
       <div style="flex:1;min-width:180px">
-        <div class="small">メモ1</div>
+        <div class="small">メモ1（固定）</div>
         <select id="memo1">
           <option>かずき</option>
           <option>かずきカード</option>
@@ -89,7 +111,7 @@
       <button class="primary" id="btnAdd" onclick="add()" disabled>追加</button>
       <button class="danger" id="btnUndo" onclick="undo()" disabled>取り消し</button>
       <div class="spacer"></div>
-      <button class="ghost" id="btnRefresh" onclick="refreshAll()" disabled>再読み込み</button>
+      <span class="small mono" id="lastOp"></span>
     </div>
   </div>
 
@@ -115,6 +137,9 @@
         <tr><td colspan="4" class="small">未取得</td></tr>
       </tbody>
     </table>
+
+    <div style="height:8px"></div>
+    <div class="small mono" id="summaryHint"></div>
   </div>
 
   <!-- 明細 -->
@@ -135,8 +160,13 @@
           <th>メモ</th>
         </tr>
       </thead>
-      <tbody id="breakdown"></tbody>
+      <tbody id="breakdownBody">
+        <tr><td colspan="4" class="small">未取得</td></tr>
+      </tbody>
     </table>
+
+    <div style="height:8px"></div>
+    <div class="small mono" id="breakdownHint"></div>
   </div>
 
 </div>
@@ -146,24 +176,30 @@
   const GAS = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
   const LIFF_ID = "2008812269-var864Dv";
 
-  // ===== 項目（必要なら増やしてOK）=====
   const ITEMS = [
     '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費',
     '電気','ガス','水道','通信費（携帯電話）','通信費（電話・インターネット・その他）',
     '交通費','散髪代・美容費','衣服・靴','医療費','交際費','おこづかい',
     '生命保険・医療保険費用','ガソリン代','車の費用（ガソリン以外）',
-    'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','お酒'
+    'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','その他（その月特別にかかる費用）','お酒'
   ];
 
   // ===== 状態 =====
   let accessToken = null;
   let profile = null;
-  let selectedMonth = null;  // "YYYYMM"
+  let selectedMonth = null; // "YYYYMM"
   let lastAddSucceeded = false;
+  let lastOpName = "";
 
   function $(id){ return document.getElementById(id); }
-  function setStatus(t){ $("status").textContent = t; }
-  function setDetail(t){ $("detail").textContent = t || ""; }
+
+  function setStatus(text, ok=null){
+    const el = $("status");
+    el.textContent = text;
+    el.className = "mono " + (ok===null ? "" : (ok ? "ok" : "ng"));
+  }
+  function setDetail(text){ $("detail").textContent = text || ""; }
+  function setLastOp(s){ lastOpName = s; $("lastOp").textContent = s ? `last: ${s}` : ""; }
 
   function ymNow(){
     const d = new Date();
@@ -186,18 +222,21 @@
     return `${y}年${m}月`;
   }
   function formatMMDD(s){
-    // "yyyy/MM/dd" or "yyyy-MM-dd" を想定
     const m = String(s||"").match(/(\d{4}).?(\d{2}).?(\d{2})/);
     if(!m) return s;
     return `${Number(m[2])}月${Number(m[3])}日`;
   }
+  function fmtNum(n){
+    const x = Number(n);
+    if (!Number.isFinite(x)) return (n ?? "");
+    return x.toLocaleString();
+  }
 
-  // ===== ネットワーク =====
   async function getJson(url){
     const r = await fetch(url, { method:"GET", cache:"no-store" });
     const txt = await r.text();
     try { return JSON.parse(txt); }
-    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status }; }
+    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status, url }; }
   }
   async function postJson(body){
     const r = await fetch(GAS + "?action=api", {
@@ -208,98 +247,135 @@
     });
     const txt = await r.text();
     try { return JSON.parse(txt); }
-    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status }; }
+    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status, bodySent:body }; }
   }
 
   // ===== 月切り替え =====
   function setMonth(ym){
     selectedMonth = ym;
     $("monthLabel").textContent = labelFromYM(ym);
-    refreshAll(); // 月が変わったら読み直す
+    $("ymInput").value = ym;
+    refreshAll(); // 月が変わったら自動更新
   }
   function setMonthToThis(){ setMonth(ymNow()); }
   function setMonthToPrev(){ setMonth(ymPrev(ymNow())); }
 
+  function applyYm(){
+    const ym = String($("ymInput").value||"").trim();
+    if(!/^\d{6}$/.test(ym)){
+      setStatus("YYYYMM が不正です", false);
+      setDetail("例：202510 のように 6桁で入力してください");
+      return;
+    }
+    setMonth(ym);
+  }
+
   // ===== 読み込み =====
   async function loadSummary(){
+    const tb = $("summaryBody");
+    const hint = $("summaryHint");
+    tb.innerHTML = `<tr><td colspan="4" class="small">読み込み中…</td></tr>`;
+    hint.textContent = "";
+
     const url = `${GAS}?action=api&op=summary&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
     const r = await getJson(url);
 
-    const tb = $("summaryBody");
-    tb.innerHTML = "";
-
     if(!r || r.ok !== true){
-      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${(r && (r.error||r.body)) || "unknown"}</td></tr>`;
-      return;
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r && (r.error||r.body)) || "unknown")}</td></tr>`;
+      hint.textContent = `url: ${url}`;
+      return false;
     }
 
     const items = r.items || [];
     if(items.length === 0){
-      tb.innerHTML = `<tr><td colspan="4" class="small">データなし</td></tr>`;
-      return;
+      tb.innerHTML = `<tr><td colspan="4" class="small">データなし（${r.month || selectedMonth}）</td></tr>`;
+      hint.textContent = `※GAS側が items を返しているか確認（今は items.length=0）`;
+      return true;
     }
 
+    tb.innerHTML = "";
     for(const it of items){
       const planned = Number(it.planned || 0);
       const actual  = Number(it.actual  || 0);
       const rest = planned - actual;
       tb.innerHTML += `
         <tr>
-          <td>${it.item || ""}</td>
-          <td class="right">${planned.toLocaleString()}</td>
-          <td class="right">${actual.toLocaleString()}</td>
-          <td class="right">${rest.toLocaleString()}</td>
+          <td>${escapeHtml(it.item || "")}</td>
+          <td class="right">${fmtNum(planned)}</td>
+          <td class="right">${fmtNum(actual)}</td>
+          <td class="right">${fmtNum(rest)}</td>
         </tr>
       `;
     }
+    hint.textContent = `month: ${r.month || selectedMonth}`;
+    return true;
   }
 
   async function loadBreakdown(){
+    const tb = $("breakdownBody");
+    const hint = $("breakdownHint");
+    tb.innerHTML = `<tr><td colspan="4" class="small">読み込み中…</td></tr>`;
+    hint.textContent = "";
+
     const url = `${GAS}?action=api&op=breakdown&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
     const r = await getJson(url);
 
-    const tb = $("breakdown");
-    tb.innerHTML = "";
-
     if(!r || r.ok !== true){
-      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${(r && (r.error||r.body)) || "unknown"}</td></tr>`;
-      return;
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r && (r.error||r.body)) || "unknown")}</td></tr>`;
+      hint.textContent = `url: ${url}`;
+      return false;
     }
 
     const rows = r.rows || [];
     if(rows.length === 0){
-      tb.innerHTML = `<tr><td colspan="4" class="small">明細なし</td></tr>`;
-      return;
+      tb.innerHTML = `<tr><td colspan="4" class="small">明細なし（${r.month || selectedMonth}）</td></tr>`;
+      hint.textContent = `month: ${r.month || selectedMonth}`;
+      return true;
     }
 
+    tb.innerHTML = "";
     for(const v of rows){
       const date = formatMMDD(v[0]);
       const item = v[1] || "";
-      const amt  = (v[2] ?? "");
+      const amt  = v[2] ?? "";
       const memo = `${v[3]||""} ${v[4]||""}`.trim();
       tb.innerHTML += `
         <tr>
-          <td>${date}</td>
-          <td>${item}</td>
-          <td class="right">${String(amt).toLocaleString?.() ?? amt}</td>
-          <td>${memo}</td>
+          <td>${escapeHtml(date)}</td>
+          <td>${escapeHtml(item)}</td>
+          <td class="right">${escapeHtml(fmtNum(amt))}</td>
+          <td>${escapeHtml(memo)}</td>
         </tr>
       `;
     }
+    hint.textContent = `month: ${r.month || selectedMonth} / rows: ${rows.length}`;
+    return true;
   }
 
   async function refreshAll(){
-    if(!accessToken || !selectedMonth) return;
-    $("btnRefresh").disabled = true;
+    if(!accessToken){
+      setStatus("access_token がありません", false);
+      setDetail("LINEアプリ内で開いているか、ログイン状態を確認してください");
+      return;
+    }
+    if(!selectedMonth){
+      selectedMonth = ymNow();
+      $("monthLabel").textContent = labelFromYM(selectedMonth);
+      $("ymInput").value = selectedMonth;
+    }
+
+    $("btnReload").disabled = true;
     setStatus("読み込み中…");
+    setDetail("");
     try{
-      await Promise.all([loadSummary(), loadBreakdown()]);
-      setStatus("表示更新OK");
+      const [a,b] = await Promise.all([loadSummary(), loadBreakdown()]);
+      if(a && b) setStatus("表示更新OK", true);
+      else setStatus("一部取得失敗（下に理由表示）", false);
     }catch(e){
-      setStatus("読み込みエラー");
+      setStatus("読み込みエラー", false);
       setDetail(String(e && e.message ? e.message : e));
     }finally{
-      $("btnRefresh").disabled = false;
+      $("btnReload").disabled = false;
     }
   }
 
@@ -311,31 +387,31 @@
   async function add(){
     const amountText = $("amount").value;
     const amount = Number(String(amountText).replace(/,/g,'').trim());
-    const body = {
+
+    lastAddSucceeded = false;
+    setUndoEnabled(false);
+    setStatus("追加中…");
+    setDetail("");
+    setLastOp("add");
+
+    const r = await postJson({
       op:"add",
       access_token: accessToken,
       item: $("item").value,
       amount,
       memo1: $("memo1").value,
       memo2: $("memo2").value
-    };
-
-    lastAddSucceeded = false;
-    setUndoEnabled(false);
-    setStatus("追加中…");
-    setDetail("");
-
-    const r = await postJson(body);
+    });
 
     if(r && r.ok === true){
-      setStatus("追加OK");
+      setStatus("追加OK", true);
       lastAddSucceeded = true;
       setUndoEnabled(true);
       $("amount").value = "";
       $("memo2").value = "";
       await refreshAll();
     }else{
-      setStatus("追加NG");
+      setStatus("追加NG", false);
       setDetail((r && (r.error || r.body)) || "unknown");
     }
   }
@@ -345,19 +421,20 @@
 
     setStatus("取り消し中…");
     setDetail("");
-    $("btnUndo").disabled = true; // 連打防止
+    setLastOp("undo");
+    $("btnUndo").disabled = true;
 
     const r = await postJson({ op:"undo", access_token: accessToken });
 
     if(r && r.ok === true){
-      setStatus("取り消しOK");
+      setStatus("取り消しOK", true);
       lastAddSucceeded = false;
       setUndoEnabled(false);
       await refreshAll();
     }else{
-      setStatus("取り消しNG");
+      setStatus("取り消しNG", false);
       setDetail((r && (r.error || r.msg || r.body)) || "unknown");
-      // 失敗ならもう一度押せるように戻す（ただし add 直後前提）
+      // 失敗時は再試行できるよう戻す
       setUndoEnabled(true);
     }
   }
@@ -365,31 +442,42 @@
   // ===== デバッグ =====
   async function copyDebug(){
     const info = {
-      month: selectedMonth,
+      selectedMonth,
       monthLabel: $("monthLabel").textContent,
-      isLoggedIn: liff.isLoggedIn(),
-      isInClient: liff.isInClient(),
+      isLoggedIn: (typeof liff !== "undefined" && liff.isLoggedIn) ? liff.isLoggedIn() : null,
+      isInClient: (typeof liff !== "undefined" && liff.isInClient) ? liff.isInClient() : null,
       hasAccessToken: !!accessToken,
-      displayName: profile ? profile.displayName : null
+      displayName: profile ? profile.displayName : null,
+      lastOp: lastOpName
     };
     try{
       await navigator.clipboard.writeText(JSON.stringify(info,null,2));
-      setStatus("デバッグコピーOK");
+      setStatus("デバッグコピーOK", true);
       setDetail("");
     }catch{
-      setStatus("コピー失敗（ブラウザ制限かも）");
+      setStatus("コピー失敗（ブラウザ制限かも）", false);
       setDetail("");
     }
   }
 
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#39;");
+  }
+
   // ===== 初期化 =====
   async function init(){
-    // items
+    // 項目埋め込み
+    const sel = $("item");
     for(const v of ITEMS){
       const o = document.createElement("option");
       o.textContent = v;
       o.value = v;
-      $("item").appendChild(o);
+      sel.appendChild(o);
     }
 
     setStatus("LIFF 初期化中…");
@@ -403,24 +491,27 @@
     accessToken = liff.getAccessToken();
     try{ profile = await liff.getProfile(); }catch{ profile = null; }
 
-    setStatus("ログインOK");
-    setDetail(profile ? `ログイン：${profile.displayName}` : "");
+    $("loginName").textContent = profile ? `ログイン：${profile.displayName}` : "";
 
     // UI enable
-    $("btnAdd").disabled = false;
-    $("btnRefresh").disabled = false;
     $("btnThisMonth").disabled = false;
     $("btnPrevMonth").disabled = false;
+    $("btnReload").disabled = false;
+    $("btnApplyYm").disabled = false;
+    $("btnAdd").disabled = false;
 
-    // ✅ デフォルトは「今月」へ（＝自動リダイレクトと同じノリ）
+    // ✅ ログイン後は必ず今月を表示（前の挙動に戻す）
     selectedMonth = ymNow();
     $("monthLabel").textContent = labelFromYM(selectedMonth);
+    $("ymInput").value = selectedMonth;
+
+    setStatus("ログインOK（今月を読み込みます）", true);
+    setDetail("");
 
     await refreshAll();
   }
 
   window.addEventListener("load", init);
 </script>
-
 </body>
 </html>
