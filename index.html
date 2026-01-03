@@ -1,42 +1,55 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>家計簿</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>家計簿 MiniApp</title>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
-  body{margin:0;background:#f6f7f9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;}
-  .wrap{max-width:920px;margin:auto;padding:16px 16px 96px;}
-  .card{background:#fff;border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 6px 22px rgba(0,0,0,.06);}
+  :root{
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#667085;
+    --border:#d0d5dd;
+    --shadow:0 8px 26px rgba(0,0,0,.08);
+    --green:#1DB446;
+    --red:#d92d20;
+    --gray:#f2f4f7;
+  }
+  body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;color:var(--text);}
+  .wrap{max-width:980px;margin:auto;padding:16px 16px 96px;}
+  .card{background:var(--card);border-radius:18px;padding:14px 14px;margin:12px 0;box-shadow:var(--shadow);}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
   .spacer{flex:1;}
-  button{height:42px;padding:0 14px;border-radius:12px;border:1px solid #d0d5dd;background:#fff;cursor:pointer;}
-  button:disabled{opacity:.55;cursor:not-allowed;}
-  .primary{background:#1DB446;color:#fff;border-color:#1DB446;font-weight:800;}
-  .danger{border-color:#f2b8b5;color:#d92d20;font-weight:800;background:#fff;}
-  .ghost{background:#fff;}
-  input,select{height:44px;width:100%;border-radius:12px;border:1px solid #d0d5dd;padding:0 12px;box-sizing:border-box;background:#fff;}
-  .small{font-size:12px;color:#667085;}
-  .title{font-weight:900;font-size:18px;}
+  .title{font-weight:900;font-size:18px;letter-spacing:.02em;}
+  .pill{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--gray);color:#344054;font-size:12px;font-weight:800;}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;}
-  table{width:100%;border-collapse:collapse;}
-  th,td{border-bottom:1px solid #eef2f6;padding:9px 8px;font-size:13px;vertical-align:top;}
-  th{color:#667085;text-align:left;font-weight:800;}
-  .right{text-align:right;}
-  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:800;}
-  .ok{color:#027a48;font-weight:900;}
-  .ng{color:#b42318;font-weight:900;}
+  .small{font-size:12px;color:var(--muted);}
+  button{height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:800;}
+  button:disabled{opacity:.55;cursor:not-allowed;}
+  .primary{background:var(--green);border-color:var(--green);color:#fff;}
+  .danger{background:#fff;border-color:#f2b8b5;color:var(--red);}
+  input,select{height:44px;width:100%;border-radius:12px;border:1px solid var(--border);padding:0 12px;box-sizing:border-box;background:#fff;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   @media (max-width:720px){ .grid2{grid-template-columns:1fr;} }
+
+  table{width:100%;border-collapse:collapse;}
+  th,td{border-bottom:1px solid #eef2f6;padding:9px 8px;font-size:13px;vertical-align:top;}
+  th{color:var(--muted);text-align:left;font-weight:900;}
+  .right{text-align:right;}
+  .ok{color:#027a48;font-weight:900;}
+  .ng{color:#b42318;font-weight:900;}
+
+  .toast{padding:10px 12px;border:1px solid #e6e8ee;border-radius:14px;background:#fafbff}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
-  <!-- ヘッダ / 月切り替え -->
+  <!-- Header / Month -->
   <div class="card">
     <div class="row">
       <div class="title">家計簿</div>
@@ -48,14 +61,13 @@
 
     <div class="grid2">
       <div class="row">
-        <button id="btnThisMonth" class="ghost" onclick="setMonthToThis()" disabled>今月</button>
-        <button id="btnPrevMonth" class="ghost" onclick="setMonthToPrev()" disabled>先月</button>
-        <button id="btnReload" class="ghost" onclick="refreshAll()" disabled>再読み込み</button>
+        <button id="btnThisMonth" onclick="setMonthToThis()" disabled>今月</button>
+        <button id="btnPrevMonth" onclick="setMonthToPrev()" disabled>先月</button>
+        <button id="btnReload" onclick="refreshAll()" disabled>再読み込み</button>
       </div>
-
       <div class="row">
         <div style="flex:1;min-width:180px">
-          <div class="small">YYYYMM で指定</div>
+          <div class="small">YYYYMM 指定</div>
           <input id="ymInput" placeholder="例：202510" inputmode="numeric">
         </div>
         <button class="primary" id="btnApplyYm" onclick="applyYm()" disabled>適用</button>
@@ -64,17 +76,24 @@
 
     <div style="height:10px"></div>
     <div id="status" class="mono">初期化中…</div>
-    <div class="small" id="detail"></div>
+    <div class="small mono" id="detail"></div>
 
-    <div style="height:6px"></div>
+    <div style="height:8px"></div>
     <div class="row">
-      <button class="ghost" onclick="copyDebug()">デバッグコピー</button>
+      <button onclick="copyDebug()">デバッグコピー</button>
+      <button onclick="whoami()">whoami</button>
       <div class="spacer"></div>
       <span class="small" id="loginName"></span>
     </div>
+
+    <div style="height:8px"></div>
+    <div class="toast">
+      <div class="small">デバッグ表示</div>
+      <div class="mono small" id="debugBox">-</div>
+    </div>
   </div>
 
-  <!-- 入力 -->
+  <!-- Input -->
   <div class="card">
     <div class="row" style="margin-bottom:10px">
       <b>入力</b>
@@ -104,7 +123,7 @@
 
     <div style="height:10px"></div>
     <div class="small">メモ2</div>
-    <input id="memo2" placeholder="例：昼ごはん、ドラッグストア、など">
+    <input id="memo2" placeholder="例：昼ごはん / ドラッグストア など">
 
     <div style="height:12px"></div>
     <div class="row">
@@ -115,12 +134,12 @@
     </div>
   </div>
 
-  <!-- サマリ -->
+  <!-- Summary -->
   <div class="card">
     <div class="row">
       <b>サマリ</b>
       <div class="spacer"></div>
-      <span class="small">予定 / 合計 / 残額</span>
+      <span class="small">予算 / 支出 / 残額</span>
     </div>
 
     <div style="height:10px"></div>
@@ -128,8 +147,8 @@
       <thead>
         <tr>
           <th>項目</th>
-          <th class="right">予定</th>
-          <th class="right">合計</th>
+          <th class="right">予算</th>
+          <th class="right">支出</th>
           <th class="right">残額</th>
         </tr>
       </thead>
@@ -142,7 +161,7 @@
     <div class="small mono" id="summaryHint"></div>
   </div>
 
-  <!-- 明細 -->
+  <!-- Breakdown -->
   <div class="card">
     <div class="row">
       <b>明細</b>
@@ -172,26 +191,19 @@
 </div>
 
 <script>
-  // ===== あなたの固定値 =====
-  const GAS = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
+  // ====== 設定（あなたのWebApp URL & LIFF ID）======
+  const GAS  = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
   const LIFF_ID = "2008812269-var864Dv";
 
-  const ITEMS = [
-    '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費',
-    '電気','ガス','水道','通信費（携帯電話）','通信費（電話・インターネット・その他）',
-    '交通費','散髪代・美容費','衣服・靴','医療費','交際費','おこづかい',
-    '生命保険・医療保険費用','ガソリン代','車の費用（ガソリン以外）',
-    'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','その他（その月特別にかかる費用）','お酒'
-  ];
-
-  // ===== 状態 =====
+  // ====== 状態 ======
   let accessToken = null;
   let profile = null;
   let selectedMonth = null; // "YYYYMM"
   let lastAddSucceeded = false;
   let lastOpName = "";
 
-  function $(id){ return document.getElementById(id); }
+  // ====== DOM ======
+  const $ = (id)=>document.getElementById(id);
 
   function setStatus(text, ok=null){
     const el = $("status");
@@ -201,6 +213,7 @@
   function setDetail(text){ $("detail").textContent = text || ""; }
   function setLastOp(s){ lastOpName = s; $("lastOp").textContent = s ? `last: ${s}` : ""; }
 
+  // ====== month helpers ======
   function ymNow(){
     const d = new Date();
     const y = d.getFullYear();
@@ -221,17 +234,48 @@
     const m = Number(ym.slice(4,6));
     return `${y}年${m}月`;
   }
-  function formatMMDD(s){
-    const m = String(s||"").match(/(\d{4}).?(\d{2}).?(\d{2})/);
-    if(!m) return s;
-    return `${Number(m[2])}月${Number(m[3])}日`;
+  function setMonth(ym){
+    selectedMonth = ym;
+    $("monthLabel").textContent = labelFromYM(ym);
+    $("ymInput").value = ym;
+    refreshAll();
   }
-  function fmtNum(n){
-    const x = Number(n);
-    if (!Number.isFinite(x)) return (n ?? "");
-    return x.toLocaleString();
+  function setMonthToThis(){ setMonth(ymNow()); }
+  function setMonthToPrev(){ setMonth(ymPrev(ymNow())); }
+
+  function applyYm(){
+    const ym = String($("ymInput").value||"").trim();
+    if(!/^\d{6}$/.test(ym)){
+      setStatus("YYYYMM が不正です", false);
+      setDetail("例：202510 のように 6桁で入力してください");
+      return;
+    }
+    setMonth(ym);
   }
 
+  // ====== formatting ======
+  function fmtNum(n){
+    const x = Number(n);
+    if(!Number.isFinite(x)) return String(n ?? "");
+    return x.toLocaleString();
+  }
+  function formatMMDD(any){
+    // GASは date を "yyyy/MM/dd" で入れてる（MiniApp版）
+    const s = String(any ?? "");
+    const m = s.match(/(\d{4})[\/\-\.](\d{2})[\/\-\.](\d{2})/);
+    if(m) return `${Number(m[2])}月${Number(m[3])}日`;
+    // fallback: Date化できれば
+    const d = new Date(s);
+    if(!isNaN(d.getTime())) return `${d.getMonth()+1}月${d.getDate()}日`;
+    return s;
+  }
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+
+  // ====== HTTP ======
   async function getJson(url){
     const r = await fetch(url, { method:"GET", cache:"no-store" });
     const txt = await r.text();
@@ -250,64 +294,81 @@
     catch { return { ok:false, error:"non_json_response", body:txt, status:r.status, bodySent:body }; }
   }
 
-  // ===== 月切り替え =====
-  function setMonth(ym){
-    selectedMonth = ym;
-    $("monthLabel").textContent = labelFromYM(ym);
-    $("ymInput").value = ym;
-    refreshAll(); // 月が変わったら自動更新
+  // ====== API wrappers (MiniApp GAS互換) ======
+  function apiUrl(op, params={}){
+    const qs = new URLSearchParams({
+      action:"api",
+      op,
+      access_token: accessToken,
+      ...params
+    });
+    return `${GAS}?${qs.toString()}`;
   }
-  function setMonthToThis(){ setMonth(ymNow()); }
-  function setMonthToPrev(){ setMonth(ymPrev(ymNow())); }
 
-  function applyYm(){
-    const ym = String($("ymInput").value||"").trim();
-    if(!/^\d{6}$/.test(ym)){
-      setStatus("YYYYMM が不正です", false);
-      setDetail("例：202510 のように 6桁で入力してください");
-      return;
+  async function loadItems(){
+    const sel = $("item");
+    sel.innerHTML = "";
+    const url = apiUrl("items");
+    const r = await getJson(url);
+    if(!r || r.ok !== true){
+      // items が落ちても最低限は動かす（固定候補）
+      const fallback = [
+        '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費',
+        '電気','ガス','水道','通信費（携帯電話）','通信費（電話・インターネット・その他）',
+        '交通費','散髪代・美容費','衣服・靴','医療費','交際費','おこづかい',
+        '生命保険・医療保険費用','ガソリン代','車の費用（ガソリン以外）',
+        'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','お酒'
+      ];
+      fallback.forEach(v=>{
+        const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o);
+      });
+      $("summaryHint").textContent = "items取得失敗のため固定リストで表示中";
+      return false;
     }
-    setMonth(ym);
+    (r.items || []).forEach(v=>{
+      const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o);
+    });
+    return true;
   }
 
-  // ===== 読み込み =====
   async function loadSummary(){
     const tb = $("summaryBody");
     const hint = $("summaryHint");
     tb.innerHTML = `<tr><td colspan="4" class="small">読み込み中…</td></tr>`;
     hint.textContent = "";
 
-    const url = `${GAS}?action=api&op=summary&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
+    const url = apiUrl("summary", { month: selectedMonth });
     const r = await getJson(url);
 
     if(!r || r.ok !== true){
-      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r && (r.error||r.body)) || "unknown")}</td></tr>`;
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r&&(r.error||r.body))||"unknown")}</td></tr>`;
       hint.textContent = `url: ${url}`;
       return false;
     }
 
-    const items = r.items || [];
-    if(items.length === 0){
-      tb.innerHTML = `<tr><td colspan="4" class="small">データなし（${r.month || selectedMonth}）</td></tr>`;
-      hint.textContent = `※GAS側が items を返しているか確認（今は items.length=0）`;
+    const rows = r.rows || []; // ★MiniApp版は rows
+    if(rows.length === 0){
+      tb.innerHTML = `<tr><td colspan="4" class="small">データなし（${escapeHtml(r.month || selectedMonth)}）</td></tr>`;
+      hint.textContent = `overall: ${fmtNum(r.overall ?? "")}`;
       return true;
     }
 
     tb.innerHTML = "";
-    for(const it of items){
-      const planned = Number(it.planned || 0);
-      const actual  = Number(it.actual  || 0);
-      const rest = planned - actual;
+    rows.forEach(it=>{
+      const budget = Number(it.budget || 0);
+      const spend  = Number(it.spend  || 0);
+      const remain = Number(it.remain || 0);
       tb.innerHTML += `
         <tr>
-          <td>${escapeHtml(it.item || "")}</td>
-          <td class="right">${fmtNum(planned)}</td>
-          <td class="right">${fmtNum(actual)}</td>
-          <td class="right">${fmtNum(rest)}</td>
+          <td>${escapeHtml(it.name || "")}</td>
+          <td class="right">${escapeHtml(fmtNum(budget))}</td>
+          <td class="right">${escapeHtml(fmtNum(spend))}</td>
+          <td class="right">${escapeHtml(fmtNum(remain))}</td>
         </tr>
       `;
-    }
-    hint.textContent = `month: ${r.month || selectedMonth}`;
+    });
+
+    hint.textContent = `month: ${r.month || selectedMonth} / overall: ${fmtNum(r.overall ?? 0)}`;
     return true;
   }
 
@@ -317,38 +378,38 @@
     tb.innerHTML = `<tr><td colspan="4" class="small">読み込み中…</td></tr>`;
     hint.textContent = "";
 
-    const url = `${GAS}?action=api&op=breakdown&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
+    // まずは50件だけ（必要ならページングUIも足せる）
+    const url = apiUrl("breakdown", { month: selectedMonth, start: 0, limit: 200 });
     const r = await getJson(url);
 
     if(!r || r.ok !== true){
-      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r && (r.error||r.body)) || "unknown")}</td></tr>`;
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r&&(r.error||r.body))||"unknown")}</td></tr>`;
       hint.textContent = `url: ${url}`;
       return false;
     }
 
-    const rows = r.rows || [];
+    const rows = r.rows || []; // ★MiniApp版は rows（オブジェクト配列）
     if(rows.length === 0){
-      tb.innerHTML = `<tr><td colspan="4" class="small">明細なし（${r.month || selectedMonth}）</td></tr>`;
-      hint.textContent = `month: ${r.month || selectedMonth}`;
+      tb.innerHTML = `<tr><td colspan="4" class="small">明細なし（${escapeHtml(r.month || selectedMonth)}）</td></tr>`;
+      hint.textContent = `total: ${r.total ?? 0}`;
       return true;
     }
 
     tb.innerHTML = "";
-    for(const v of rows){
-      const date = formatMMDD(v[0]);
-      const item = v[1] || "";
-      const amt  = v[2] ?? "";
-      const memo = `${v[3]||""} ${v[4]||""}`.trim();
+    rows.forEach(v=>{
+      const date = formatMMDD(v.date);
+      const memo = `${v.memo1||""} ${v.memo2||""}`.trim();
       tb.innerHTML += `
         <tr>
           <td>${escapeHtml(date)}</td>
-          <td>${escapeHtml(item)}</td>
-          <td class="right">${escapeHtml(fmtNum(amt))}</td>
+          <td>${escapeHtml(v.item || "")}</td>
+          <td class="right">${escapeHtml(fmtNum(v.amount ?? ""))}</td>
           <td>${escapeHtml(memo)}</td>
         </tr>
       `;
-    }
-    hint.textContent = `month: ${r.month || selectedMonth} / rows: ${rows.length}`;
+    });
+
+    hint.textContent = `month: ${r.month || selectedMonth} / rows: ${rows.length} / total: ${r.total ?? ""}`;
     return true;
   }
 
@@ -367,7 +428,9 @@
     $("btnReload").disabled = true;
     setStatus("読み込み中…");
     setDetail("");
+
     try{
+      await loadItems(); // itemsは軽いので毎回でもOK（重ければ初回だけにしてもOK）
       const [a,b] = await Promise.all([loadSummary(), loadBreakdown()]);
       if(a && b) setStatus("表示更新OK", true);
       else setStatus("一部取得失敗（下に理由表示）", false);
@@ -379,28 +442,49 @@
     }
   }
 
-  // ===== 入力 =====
+  // ====== Add / Undo (MiniApp POST API) ======
+  function parseAmountInput(s){
+    const t = String(s||"").trim();
+    if(!t) return NaN;
+    // ざっくり：カンマ除去
+    const cleaned = t.replace(/,/g,"");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
   function setUndoEnabled(on){
     $("btnUndo").disabled = !on;
   }
 
   async function add(){
-    const amountText = $("amount").value;
-    const amount = Number(String(amountText).replace(/,/g,'').trim());
+    const item = $("item").value;
+    const amount = parseAmountInput($("amount").value);
+    const memo1 = $("memo1").value;
+    const memo2 = $("memo2").value;
 
     lastAddSucceeded = false;
     setUndoEnabled(false);
+    setLastOp("add");
+
+    if(!item){
+      setStatus("項目が未選択です", false);
+      return;
+    }
+    if(!Number.isFinite(amount)){
+      setStatus("金額が不正です", false);
+      setDetail("例：1200 / 1,200 のように入力してください");
+      return;
+    }
+
     setStatus("追加中…");
     setDetail("");
-    setLastOp("add");
 
     const r = await postJson({
       op:"add",
       access_token: accessToken,
-      item: $("item").value,
-      amount,
-      memo1: $("memo1").value,
-      memo2: $("memo2").value
+      item, amount, memo1, memo2,
+      // ★ month を渡せる（必要なら）。基本は当月入力なので未指定でもOK
+      // month: selectedMonth
     });
 
     if(r && r.ok === true){
@@ -412,7 +496,7 @@
       await refreshAll();
     }else{
       setStatus("追加NG", false);
-      setDetail((r && (r.error || r.body)) || "unknown");
+      setDetail((r && (r.error || r.msg || r.body)) || "unknown");
     }
   }
 
@@ -434,12 +518,33 @@
     }else{
       setStatus("取り消しNG", false);
       setDetail((r && (r.error || r.msg || r.body)) || "unknown");
-      // 失敗時は再試行できるよう戻す
+      // 失敗時は再試行可に
       setUndoEnabled(true);
     }
   }
 
-  // ===== デバッグ =====
+  // ====== Debug helpers ======
+  function setDebug(obj){
+    $("debugBox").textContent = JSON.stringify(obj, null, 2);
+  }
+
+  async function whoami(){
+    try{
+      const r = await getJson(apiUrl("whoami"));
+      setDebug({ whoami: r });
+      if(r && r.ok) {
+        setStatus("whoami OK", true);
+        setDetail(r.userId || "");
+      } else {
+        setStatus("whoami NG", false);
+        setDetail((r && (r.error||r.body)) || "unknown");
+      }
+    }catch(e){
+      setStatus("whoami エラー", false);
+      setDetail(String(e && e.message ? e.message : e));
+    }
+  }
+
   async function copyDebug(){
     const info = {
       selectedMonth,
@@ -447,66 +552,52 @@
       isLoggedIn: (typeof liff !== "undefined" && liff.isLoggedIn) ? liff.isLoggedIn() : null,
       isInClient: (typeof liff !== "undefined" && liff.isInClient) ? liff.isInClient() : null,
       hasAccessToken: !!accessToken,
-      displayName: profile ? profile.displayName : null,
+      profile: profile ? { displayName: profile.displayName, userId: profile.userId } : null,
       lastOp: lastOpName
     };
     try{
       await navigator.clipboard.writeText(JSON.stringify(info,null,2));
       setStatus("デバッグコピーOK", true);
       setDetail("");
+      setDebug(info);
     }catch{
       setStatus("コピー失敗（ブラウザ制限かも）", false);
       setDetail("");
+      setDebug(info);
     }
   }
 
-  function escapeHtml(s){
-    return String(s ?? "")
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#39;");
-  }
-
-  // ===== 初期化 =====
+  // ====== init ======
   async function init(){
-    // 項目埋め込み
-    const sel = $("item");
-    for(const v of ITEMS){
-      const o = document.createElement("option");
-      o.textContent = v;
-      o.value = v;
-      sel.appendChild(o);
-    }
-
     setStatus("LIFF 初期化中…");
     await liff.init({ liffId: LIFF_ID });
 
     if(!liff.isLoggedIn()){
+      // ここで login() すると、普通は自動でLINEログインへ飛ぶ
       liff.login();
       return;
     }
 
     accessToken = liff.getAccessToken();
-    try{ profile = await liff.getProfile(); }catch{ profile = null; }
+    try { profile = await liff.getProfile(); } catch { profile = null; }
 
-    $("loginName").textContent = profile ? `ログイン：${profile.displayName}` : "";
+    $("loginName").textContent = profile ? `ログイン：${profile.displayName}` : "ログイン：-";
 
-    // UI enable
+    // enable UI
     $("btnThisMonth").disabled = false;
     $("btnPrevMonth").disabled = false;
     $("btnReload").disabled = false;
     $("btnApplyYm").disabled = false;
     $("btnAdd").disabled = false;
 
-    // ✅ ログイン後は必ず今月を表示（前の挙動に戻す）
+    // 初期：今月（ログイン後に今月のサマリ/明細が見れる挙動を復活）
     selectedMonth = ymNow();
     $("monthLabel").textContent = labelFromYM(selectedMonth);
     $("ymInput").value = selectedMonth;
 
     setStatus("ログインOK（今月を読み込みます）", true);
     setDetail("");
+    setDebug({ ready:true, selectedMonth });
 
     await refreshAll();
   }
