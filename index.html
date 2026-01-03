@@ -420,26 +420,30 @@ async function apiGet(op, params={}) {
 }
 
 async function apiPost(op, body={}) {
-  if (!accessToken) throw new Error("access_token がありません（LIFF初期化未完了）");
-  setState("通信中", `POST ${op} を実行中…`, "");
+  if (!accessToken) throw new Error("access_token がありません");
+
+  setState("通信中", `POST(${op}) を実行中…`, "");
 
   const url = new URL(WEBAPP_URL);
   url.searchParams.set("action", "api");
+  url.searchParams.set("op", op);
+  url.searchParams.set("access_token", accessToken);
 
-  const payload = Object.assign({}, body, {
-    op,
-    access_token: accessToken
+  Object.keys(body).forEach(k => {
+    if (body[k] !== undefined && body[k] !== null) {
+      url.searchParams.set(k, body[k]);
+    }
   });
 
-  const res = await fetch(url.toString(), {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(payload)
-  });
-
+  const res = await fetch(url.toString(), { method: "GET" });
   const text = await res.text();
+
   let json;
-  try { json = JSON.parse(text); } catch(e) { throw new Error("JSON以外が返りました: " + text.slice(0,200)); }
+  try { json = JSON.parse(text); }
+  catch {
+    throw new Error("JSON以外が返りました: " + text.slice(0,200));
+  }
+
   if (!json.ok) throw new Error(json.error || json.msg || "API error");
   return json;
 }
@@ -576,10 +580,19 @@ async function loadChart() {
   const r = await apiGet("chart_overall", { month });
 
   if (!r.url) throw new Error("グラフURLが空です");
-  el("chartImg").src = r.url;
-  el("chartImgWrap").style.display = "";
+
+  const img = el("chartImg");
+  img.src = r.url + "&cache=" + Date.now(); // ←重要
+  img.onload = () => {
+    el("chartImgWrap").style.display = "";
+  };
+  img.onerror = () => {
+    setState("表示失敗", "グラフ画像を読み込めませんでした", "ng");
+  };
+
   setState("準備完了", `グラフを更新しました（${month}）`, "ok");
 }
+
 
 // ====== 追加・取り消し ======
 async function addEntry() {
