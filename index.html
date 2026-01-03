@@ -457,48 +457,52 @@
   }
 
   async function add(){
-    const item = $("item").value;
-    const amount = parseAmountInput($("amount").value);
-    const memo1 = $("memo1").value;
-    const memo2 = $("memo2").value;
+  const item = $("item").value;
+  const amount = parseAmountInput($("amount").value);
+  const memo1 = $("memo1").value;
+  const memo2 = $("memo2").value;
 
-    lastAddSucceeded = false;
-    setUndoEnabled(false);
-    setLastOp("add");
+  lastAddSucceeded = false;
+  setUndoEnabled(false);
+  setLastOp("add");
 
-    if(!item){
-      setStatus("項目が未選択です", false);
-      return;
-    }
-    if(!Number.isFinite(amount)){
-      setStatus("金額が不正です", false);
-      setDetail("例：1200 / 1,200 のように入力してください");
-      return;
-    }
+  if(!item || !Number.isFinite(amount)){
+    setStatus("入力が不正です", false);
+    return;
+  }
 
-    setStatus("追加中…");
-    setDetail("");
+  setStatus("追加中…");
+  setDetail("");
 
+  try {
     const r = await postJson({
       op:"add",
       access_token: accessToken,
-      item, amount, memo1, memo2,
-      // ★ month を渡せる（必要なら）。基本は当月入力なので未指定でもOK
-      // month: selectedMonth
+      item, amount, memo1, memo2
     });
 
-    if(r && r.ok === true){
+    if (r && r.ok === true) {
       setStatus("追加OK", true);
       lastAddSucceeded = true;
       setUndoEnabled(true);
       $("amount").value = "";
       $("memo2").value = "";
       await refreshAll();
-    }else{
-      setStatus("追加NG", false);
-      setDetail((r && (r.error || r.msg || r.body)) || "unknown");
+    } else {
+      throw new Error((r && (r.error || r.msg)) || "unknown error");
     }
+
+  } catch (e) {
+    setStatus("追加NG", false);
+    setDetail(String(e.message || e));
+    setUndoEnabled(false);
+
+  } finally {
+    // ★ ここが重要：必ず UI を解放する
+    $("btnAdd").disabled = false;
   }
+}
+
 
   async function undo(){
     if(!lastAddSucceeded) return;
