@@ -82,7 +82,6 @@
     <div class="row">
       <button onclick="copyDebug()">デバッグコピー</button>
       <button onclick="whoami()">whoami</button>
-      <button onclick="ping()">ping</button>
       <div class="spacer"></div>
       <span class="small" id="loginName"></span>
     </div>
@@ -193,7 +192,6 @@
 
 <script>
   // ====== 設定（あなたのWebApp URL & LIFF ID）======
-  // ★ /exec になっていることを確認（/dev だと不安定になりがち）
   const GAS  = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
   const LIFF_ID = "2008812269-var864Dv";
 
@@ -203,7 +201,6 @@
   let selectedMonth = null; // "YYYYMM"
   let lastAddSucceeded = false;
   let lastOpName = "";
-  let isBusy = false;
 
   // ====== DOM ======
   const $ = (id)=>document.getElementById(id);
@@ -215,18 +212,6 @@
   }
   function setDetail(text){ $("detail").textContent = text || ""; }
   function setLastOp(s){ lastOpName = s; $("lastOp").textContent = s ? `last: ${s}` : ""; }
-
-  function setBusy(on){
-    isBusy = !!on;
-    // 操作衝突を防止
-    $("btnReload").disabled = on || !accessToken;
-    $("btnThisMonth").disabled = on || !accessToken;
-    $("btnPrevMonth").disabled = on || !accessToken;
-    $("btnApplyYm").disabled  = on || !accessToken;
-    $("btnAdd").disabled      = on || !accessToken;
-    // undoは lastAddSucceeded のときだけ
-    $("btnUndo").disabled     = on || !lastAddSucceeded;
-  }
 
   // ====== month helpers ======
   function ymNow(){
@@ -288,50 +273,25 @@
       .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
   }
 
-  // ====== HTTP（ここが重要：必ず text を確保して原因を出す） ======
-  async function fetchJson(url, opt={}){
-    const res = await fetch(url, {
-      cache:"no-store",
-      ...opt
-    });
-
-    const text = await res.text();
-    let json = null;
-    try { json = JSON.parse(text); } catch {}
-
-    // 200でなくても、JSONでなくても、とにかく情報を返す
-    if (!res.ok){
-      return {
-        ok:false,
-        error:"http_error",
-        status: res.status,
-        statusText: res.statusText,
-        url,
-        body: text
-      };
-    }
-    if (!json){
-      return {
-        ok:false,
-        error:"non_json_response",
-        status: res.status,
-        url,
-        body: text
-      };
-    }
-    return json;
-  }
-
+  // ====== HTTP ======
   async function getJson(url){
-    return fetchJson(url, { method:"GET" });
+    const r = await fetch(url, { method:"GET", cache:"no-store" });
+    const txt = await r.text();
+    try { return JSON.parse(txt); }
+    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status, url }; }
   }
 
+  // ★修正点：Content-Type を付けずに POST（プリフライト回避）
   async function postJson(body){
-    return fetchJson(GAS + "?action=api", {
+    const r = await fetch(GAS + "?action=api", {
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      cache:"no-store",
+      // headers を付けない！（= simple request 化）
       body: JSON.stringify(body)
     });
+    const txt = await r.text();
+    try { return JSON.parse(txt); }
+    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status, bodySent:body }; }
   }
 
   // ====== API wrappers ======
@@ -339,48 +299,18 @@
     const qs = new URLSearchParams({
       action:"api",
       op,
-      access_token: accessToken || "",
+      access_token: accessToken,
       ...params
     });
     return `${GAS}?${qs.toString()}`;
   }
 
-  // ====== UI helpers ======
-  function setUndoEnabled(on){
-    lastAddSucceeded = !!on;
-    $("btnUndo").disabled = !lastAddSucceeded || isBusy;
-  }
-
-  function setDebug(obj){
-    $("debugBox").textContent = JSON.stringify(obj, null, 2);
-  }
-
-  function showApiError_(title, r, url){
-    const msg = (r && (r.error || r.msg)) || "unknown";
-    const body = (r && r.body) ? String(r.body).slice(0, 500) : "";
-    const s = [
-      title,
-      `error: ${msg}`,
-      r && r.status ? `status: ${r.status} ${r.statusText || ""}` : "",
-      url ? `url: ${url}` : "",
-      body ? `body(first500): ${body}` : ""
-    ].filter(Boolean).join(" / ");
-
-    setStatus(title, false);
-    setDetail(s);
-    setDebug({ title, response: r, url });
-  }
-
-  // ====== loaders ======
   async function loadItems(){
     const sel = $("item");
     sel.innerHTML = "";
-
     const url = apiUrl("items");
     const r = await getJson(url);
-
     if(!r || r.ok !== true){
-      // 固定候補でフォールバック
       const fallback = [
         '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費',
         '電気','ガス','水道','通信費（携帯電話）','通信費（電話・インターネット・その他）',
@@ -389,20 +319,13 @@
         'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','お酒'
       ];
       fallback.forEach(v=>{
-        const o=document.createElement("option");
-        o.value=v; o.textContent=v;
-        sel.appendChild(o);
+        const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o);
       });
       $("summaryHint").textContent = "items取得失敗のため固定リストで表示中";
-      // どの理由で落ちたかは detail / debug に出す
-      setDebug({ op:"items", response:r, url });
       return false;
     }
-
     (r.items || []).forEach(v=>{
-      const o=document.createElement("option");
-      o.value=v; o.textContent=v;
-      sel.appendChild(o);
+      const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o);
     });
     return true;
   }
@@ -417,9 +340,8 @@
     const r = await getJson(url);
 
     if(!r || r.ok !== true){
-      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r&&(r.error||r.msg))||"unknown")}</td></tr>`;
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r&&(r.error||r.body))||"unknown")}</td></tr>`;
       hint.textContent = `url: ${url}`;
-      setDebug({ op:"summary", response:r, url });
       return false;
     }
 
@@ -459,9 +381,8 @@
     const r = await getJson(url);
 
     if(!r || r.ok !== true){
-      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r&&(r.error||r.msg))||"unknown")}</td></tr>`;
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${escapeHtml((r&&(r.error||r.body))||"unknown")}</td></tr>`;
       hint.textContent = `url: ${url}`;
-      setDebug({ op:"breakdown", response:r, url });
       return false;
     }
 
@@ -502,26 +423,20 @@
       $("ymInput").value = selectedMonth;
     }
 
-    setBusy(true);
+    $("btnReload").disabled = true;
     setStatus("読み込み中…");
     setDetail("");
 
     try{
       await loadItems();
       const [a,b] = await Promise.all([loadSummary(), loadBreakdown()]);
-      if(a && b){
-        setStatus("表示更新OK", true);
-        setDetail("");
-      }else{
-        setStatus("一部取得失敗（debugBox参照）", false);
-        setDetail("summary/breakdown/items のどこかが落ちています。debugBoxの response を見てください。");
-      }
+      if(a && b) setStatus("表示更新OK", true);
+      else setStatus("一部取得失敗（下に理由表示）", false);
     }catch(e){
       setStatus("読み込みエラー", false);
       setDetail(String(e && e.message ? e.message : e));
-      setDebug({ op:"refreshAll", error:String(e), stack:e && e.stack ? String(e.stack) : null });
     }finally{
-      setBusy(false);
+      $("btnReload").disabled = false;
     }
   }
 
@@ -534,24 +449,28 @@
     return Number.isFinite(n) ? n : NaN;
   }
 
-  async function add(){
-    if(isBusy) return;
+  function setUndoEnabled(on){
+    $("btnUndo").disabled = !on;
+  }
 
+  // ★修正：btnAddを確実にロック/解除、fetch失敗も detail に出す
+  async function add(){
     const item = $("item").value;
     const amount = parseAmountInput($("amount").value);
     const memo1 = $("memo1").value;
     const memo2 = $("memo2").value;
 
-    setLastOp("add");
+    lastAddSucceeded = false;
     setUndoEnabled(false);
+    setLastOp("add");
 
     if(!item || !Number.isFinite(amount)){
       setStatus("入力が不正です", false);
-      setDetail("項目と金額を確認してください");
+      setDetail("金額が空/非数値になっていないか確認してね");
       return;
     }
 
-    setBusy(true);
+    $("btnAdd").disabled = true;
     setStatus("追加中…");
     setDetail("");
 
@@ -559,82 +478,74 @@
       const r = await postJson({
         op:"add",
         access_token: accessToken,
-        item, amount, memo1, memo2
+        item, amount, memo1, memo2,
+        month: selectedMonth
       });
 
       if (r && r.ok === true) {
         setStatus("追加OK", true);
-        setDetail(r.msg || "");
+        lastAddSucceeded = true;
         setUndoEnabled(true);
-
         $("amount").value = "";
         $("memo2").value = "";
-
         await refreshAll();
       } else {
-        // ここで「何が返ってきたか」をdetail/debugに必ず出す
-        showApiError_("追加NG", r, GAS + "?action=api (POST)");
-        setUndoEnabled(false);
+        throw new Error((r && (r.error || r.msg || r.body)) || "unknown error");
       }
+
     } catch (e) {
-      setStatus("追加NG（例外）", false);
-      setDetail(String(e && e.message ? e.message : e));
-      setDebug({ op:"add", exception:String(e), stack:e && e.stack ? String(e.stack) : null });
-      setUndoEnabled(false);
+      setStatus("追加NG", false);
+      // “load failed” みたいな fetch 例外はここに来る
+      setDetail(String(e && (e.message || e)) );
+
     } finally {
-      setBusy(false);
+      $("btnAdd").disabled = false;
     }
   }
 
   async function undo(){
-    if(isBusy) return;
     if(!lastAddSucceeded) return;
 
-    setBusy(true);
     setStatus("取り消し中…");
     setDetail("");
     setLastOp("undo");
+    $("btnUndo").disabled = true;
 
     try{
       const r = await postJson({ op:"undo", access_token: accessToken });
 
       if(r && r.ok === true){
         setStatus("取り消しOK", true);
-        setDetail(r.msg || "");
+        lastAddSucceeded = false;
         setUndoEnabled(false);
         await refreshAll();
       }else{
-        showApiError_("取り消しNG", r, GAS + "?action=api (POST)");
-        // 失敗時は再試行できるように戻す
+        setStatus("取り消しNG", false);
+        setDetail((r && (r.error || r.msg || r.body)) || "unknown");
         setUndoEnabled(true);
       }
     }catch(e){
-      setStatus("取り消しNG（例外）", false);
-      setDetail(String(e && e.message ? e.message : e));
-      setDebug({ op:"undo", exception:String(e), stack:e && e.stack ? String(e.stack) : null });
+      setStatus("取り消しNG", false);
+      setDetail(String(e && (e.message || e)));
       setUndoEnabled(true);
-    }finally{
-      setBusy(false);
     }
   }
 
   // ====== Debug helpers ======
+  function setDebug(obj){
+    $("debugBox").textContent = JSON.stringify(obj, null, 2);
+  }
+
   async function whoami(){
     try{
-      if(!accessToken){
-        setStatus("whoami NG", false);
-        setDetail("access_token がありません");
-        return;
-      }
-      const url = apiUrl("whoami");
-      const r = await getJson(url);
-      setDebug({ op:"whoami", response:r, url });
-
-      if(r && r.ok){
+      const r = await getJson(apiUrl("whoami"));
+      setDebug({ whoami: r });
+      if(r && r.ok) {
         setStatus("whoami OK", true);
         setDetail(r.userId || "");
-      }else{
-        showApiError_("whoami NG", r, url);
+      } else {
+        setStatus("whoami NG", false);
+        setDetail((r && (r.error||r.body)) || "unknown");
       }
     }catch(e){
       setStatus("whoami エラー", false);
@@ -642,32 +553,15 @@
     }
   }
 
-  async function ping(){
-    // GAS側に op=ping を追加していない場合は unknown op になるけど、それでも生存確認にはなる
-    try{
-      const url = `${GAS}?action=api&op=ping&access_token=${encodeURIComponent(accessToken||"")}`;
-      const r = await getJson(url);
-      setDebug({ op:"ping", response:r, url });
-      if(r && r.ok) setStatus("ping OK", true);
-      else setStatus("ping NG（debugBox参照）", false);
-      setDetail("");
-    }catch(e){
-      setStatus("ping エラー", false);
-      setDetail(String(e && e.message ? e.message : e));
-    }
-  }
-
   async function copyDebug(){
     const info = {
-      gas: GAS,
       selectedMonth,
       monthLabel: $("monthLabel").textContent,
       isLoggedIn: (typeof liff !== "undefined" && liff.isLoggedIn) ? liff.isLoggedIn() : null,
       isInClient: (typeof liff !== "undefined" && liff.isInClient) ? liff.isInClient() : null,
       hasAccessToken: !!accessToken,
       profile: profile ? { displayName: profile.displayName, userId: profile.userId } : null,
-      lastOp: lastOpName,
-      busy: isBusy
+      lastOp: lastOpName
     };
     try{
       await navigator.clipboard.writeText(JSON.stringify(info,null,2));
@@ -684,20 +578,9 @@
   // ====== init ======
   async function init(){
     setStatus("LIFF 初期化中…");
-    setDetail("");
-    setDebug({ phase:"init-start" });
-
-    try{
-      await liff.init({ liffId: LIFF_ID });
-    }catch(e){
-      setStatus("LIFF init 失敗", false);
-      setDetail(String(e && e.message ? e.message : e));
-      setDebug({ phase:"liff.init", error:String(e), stack:e && e.stack ? String(e.stack) : null });
-      return;
-    }
+    await liff.init({ liffId: LIFF_ID });
 
     if(!liff.isLoggedIn()){
-      // LINEログインへ
       liff.login();
       return;
     }
@@ -707,22 +590,19 @@
 
     $("loginName").textContent = profile ? `ログイン：${profile.displayName}` : "ログイン：-";
 
-    // 初期：今月
+    $("btnThisMonth").disabled = false;
+    $("btnPrevMonth").disabled = false;
+    $("btnReload").disabled = false;
+    $("btnApplyYm").disabled = false;
+    $("btnAdd").disabled = false;
+
     selectedMonth = ymNow();
     $("monthLabel").textContent = labelFromYM(selectedMonth);
     $("ymInput").value = selectedMonth;
 
-    // UI enable
-    setBusy(false);
-
     setStatus("ログインOK（今月を読み込みます）", true);
     setDetail("");
-    setDebug({
-      phase:"ready",
-      selectedMonth,
-      profile: profile ? { displayName: profile.displayName, userId: profile.userId } : null,
-      hasAccessToken: !!accessToken
-    });
+    setDebug({ ready:true, selectedMonth });
 
     await refreshAll();
   }
