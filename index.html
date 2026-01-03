@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>家計簿ミニアプリ</title>
 
+  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
@@ -13,21 +14,19 @@
     .row { display: flex; gap: 8px; flex-wrap: wrap; }
     button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     button.primary { background: #1DB446; color: #fff; border-color: #1DB446; }
-    button.danger { background: #c62828; color: #fff; border-color: #c62828; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     pre { background:#111; color:#ddd; padding:12px; border-radius:12px; overflow:auto; }
     .muted { color:#666; font-size: 12px; }
     .ok { color:#1b8f3a; font-weight: 700; }
     .ng { color:#c62828; font-weight: 700; }
     input { padding:10px 12px; border-radius:10px; border:1px solid #ccc; width: 100%; box-sizing: border-box;}
-    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
   </style>
 </head>
 
 <body>
   <h2>家計簿ミニアプリ</h2>
   <div class="muted">
-    目的：LIFFでログイン→access_tokenを取得→GASで userId(Uxxxx) を確定し、2人だけ許可します。
+    LINEログイン後、自動で本人確認を行います。
   </div>
 
   <div class="card">
@@ -37,243 +36,109 @@
   </div>
 
   <div class="card">
-    <div><b>接続先</b></div>
-    <div class="muted">GAS WebApp URL</div>
-    <input id="gasUrl" />
-    <div class="muted" style="margin-top:8px;">LIFF ID</div>
-    <input id="liffId" />
-    <div class="muted" style="margin-top:8px;">
-      ※ まずはこのまま触らずOK。将来URLを変える時に使えます。
-    </div>
-  </div>
-
-  <div class="card">
     <div class="row">
-      <button class="primary" id="btnLogin" onclick="doLogin()" disabled>ログイン</button>
-      <button class="primary" id="btnWhoami" onclick="whoami()" disabled>whoami（本人確認）</button>
+      <button class="primary" id="btnWhoami" onclick="whoami()" disabled>本人確認</button>
       <button id="btnSummary" onclick="loadSummary()" disabled>今月サマリ</button>
-      <button id="btnProfile" onclick="showProfile()" disabled>プロフィール表示</button>
       <button id="btnClose" onclick="closeLiff()" disabled>閉じる</button>
-      <button onclick="copyDebug()">デバッグ情報コピー</button>
-    </div>
-    <div class="muted" style="margin-top:8px;">
-      ログインできない場合でも「デバッグ情報コピー」を押して貼ってください（userIdが取れればそこに出ます）。
     </div>
   </div>
 
   <div class="card">
-    <div><b>レスポンス / デバッグ</b></div>
+    <div><b>レスポンス</b></div>
     <pre id="output">（ここに結果が出ます）</pre>
   </div>
 
 <script>
-  // ===== 固定（あなたの値） =====
-  const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
-  const DEFAULT_LIFF_ID = "2008812269-var864Dv";
+  // ===== 固定 =====
+  const GAS_URL  = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
+  const LIFF_ID = "2008812269-var864Dv";
 
   // ===== 状態 =====
-  let idToken = null;
   let accessToken = null;
   let profile = null;
-  let liffContext = null;
 
-  // ===== UI helpers =====
-  const $ = (id) => document.getElementById(id);
-  function setStatus(text, ok=null) {
+  // ===== UI =====
+  const $ = id => document.getElementById(id);
+  function setStatus(text, ok=null){
     const el = $("status");
     el.textContent = text;
     el.className = ok === null ? "" : (ok ? "ok" : "ng");
   }
-  function setDetail(text) { $("detail").textContent = text || ""; }
-  function setOutput(objOrText) {
-    $("output").textContent = (typeof objOrText === "string")
-      ? objOrText
-      : JSON.stringify(objOrText, null, 2);
+  function setDetail(text){ $("detail").textContent = text || ""; }
+  function setOutput(obj){
+    $("output").textContent = JSON.stringify(obj, null, 2);
+  }
+  function enableButtons(){
+    $("btnWhoami").disabled = false;
+    $("btnSummary").disabled = false;
+    $("btnClose").disabled = false;
   }
 
-  function enableButtons({ login=false, authed=false }) {
-    $("btnLogin").disabled = !login;
-
-    $("btnWhoami").disabled = !authed;
-    $("btnSummary").disabled = !authed;
-    $("btnProfile").disabled = !authed;
-    $("btnClose").disabled = !authed;
-  }
-
-  function safe(fn, fallback=null) {
-    try { return fn(); } catch { return fallback; }
-  }
-
-  // ===== LIFF 初期化 =====
-  async function init() {
-    $("gasUrl").value = DEFAULT_GAS_URL;
-    $("liffId").value = DEFAULT_LIFF_ID;
-
+  // ===== 初期化 =====
+  async function init(){
     try {
       setStatus("LIFF 初期化中…");
-      await liff.init({ liffId: DEFAULT_LIFF_ID });
+      await liff.init({ liffId: LIFF_ID });
 
-      // ここはログイン状態に関係なく取れることがある
-      liffContext = safe(() => liff.getContext(), null);
-
-      const loggedIn = liff.isLoggedIn();
-      const inClient = liff.isInClient();
-
-      // ログインしてない場合：自動ログインに飛ばさず、情報を表示してボタンを出す
-      if (!loggedIn) {
-        setStatus("未ログイン（ログインが必要）", false);
-
-        const debug = buildDebugInfo({ note: "未ログインなので access_token / profile は取得不可。getContext() に userId が出る場合だけ表示されます。" });
-        setOutput(debug);
-
-        setDetail(
-          (debug.context && debug.context.userId)
-            ? `getContext.userId が取れました：${debug.context.userId}`
-            : "getContext.userId は取得できませんでした（起動経路/権限次第で null になります）"
-        );
-
-        enableButtons({ login:true, authed:false });
+      // 未ログインなら即ログイン（自動リダイレクト）
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: location.href });
         return;
       }
 
-      // ログイン済み
-      idToken = liff.getIDToken();
       accessToken = liff.getAccessToken();
-      try { profile = await liff.getProfile(); } catch { profile = null; }
+      profile = await liff.getProfile();
 
-      setStatus("初期化OK（ログイン済み）", true);
-      setDetail(profile ? `ログイン：${profile.displayName}` : "ログイン：profile未取得");
-      enableButtons({ login:false, authed:true });
+      setStatus("ログイン完了", true);
+      setDetail(`こんにちは、${profile.displayName} さん`);
+      enableButtons();
 
-      // 起動直後に whoami したいならここをON
+      // 起動時に本人確認を一度走らせるならここ
       // await whoami();
 
-    } catch (err) {
-      setStatus("初期化エラー", false);
-      setDetail(String(err && err.message ? err.message : err));
-      setOutput(buildDebugInfo({ error: String(err), note: "liff.init() 自体が失敗しています。LIFF ID / エンドポイントURL / 設定を確認。" }));
-      enableButtons({ login:false, authed:false });
-    }
-  }
-
-  function doLogin() {
-    try {
-      // redirectUri を付けると迷子になりにくい
-      const redirectUri = window.location.href;
-      liff.login({ redirectUri });
     } catch (e) {
-      setStatus("login 呼び出し失敗", false);
-      setOutput({ error: "login_failed", detail: String(e) });
+      setStatus("初期化エラー", false);
+      setDetail(String(e));
+      setOutput({ error: String(e) });
     }
   }
 
-  // ===== GAS 呼び出し（GETしてJSON期待）=====
-  async function fetchJson(url) {
-    const res = await fetch(url, { method: "GET", cache: "no-store" });
-    const text = await res.text();
-    try { return JSON.parse(text); }
-    catch (_) { return { error: "non_json_response", httpStatus: res.status, body: text }; }
+  // ===== GAS 呼び出し =====
+  async function fetchJson(url){
+    const res = await fetch(url, { cache:"no-store" });
+    return await res.json();
   }
 
-  // ===== whoami（GASへ）=====
-  async function whoami() {
-    if (!accessToken) {
-      setStatus("access_token がありません（未ログイン）", false);
-      setOutput(buildDebugInfo({ note:"未ログインのため whoami は実行できません。ログインして access_token を取得してください。" }));
-      return;
-    }
-
-    const gasUrl = $("gasUrl").value.trim();
-    const url = `${gasUrl}?action=api&op=whoami&access_token=${encodeURIComponent(accessToken)}`;
-
-    setStatus("whoami 実行中…");
-    setDetail("GASへ問い合わせています…");
-
-    const json = await fetchJson(url);
-    setOutput(json);
-
-    if (json.ok && json.userId) {
-      setStatus("whoami OK（userId取得）", true);
-      setDetail(`userId: ${json.userId}`);
-    } else {
-      setStatus("whoami NG", false);
-      setDetail(JSON.stringify(json));
-    }
-  }
-
-  // ===== summary（GASへ）=====
-  async function loadSummary() {
-    if (!accessToken) {
-      setStatus("access_token がありません（未ログイン）", false);
-      return;
-    }
-    const gasUrl = $("gasUrl").value.trim();
-    const url = `${gasUrl}?action=api&op=summary&access_token=${encodeURIComponent(accessToken)}`;
-
-    setStatus("summary 実行中…");
+  async function whoami(){
+    setStatus("本人確認中…");
+    const url = `${GAS_URL}?action=api&op=whoami&access_token=${encodeURIComponent(accessToken)}`;
     const json = await fetchJson(url);
     setOutput(json);
 
     if (json.ok) {
-      setStatus("summary OK", true);
-      setDetail(`month: ${json.month || ""} / overall: ${json.overall}`);
+      setStatus("本人確認OK", true);
+      setDetail(`userId: ${json.userId}`);
     } else {
-      setStatus("summary NG", false);
-      setDetail(JSON.stringify(json));
+      setStatus("本人確認NG", false);
+      setDetail(json.error || "");
     }
   }
 
-  // ===== profile 表示 =====
-  async function showProfile() {
-    try {
-      if (!profile) profile = await liff.getProfile();
-      setOutput({ profile });
-    } catch (e) {
-      setOutput({ error: "getProfile_failed", detail: String(e) });
+  async function loadSummary(){
+    setStatus("サマリ取得中…");
+    const url = `${GAS_URL}?action=api&op=summary&access_token=${encodeURIComponent(accessToken)}`;
+    const json = await fetchJson(url);
+    setOutput(json);
+
+    if (json.ok) {
+      setStatus("サマリ取得OK", true);
+    } else {
+      setStatus("サマリ取得NG", false);
     }
   }
 
-  // ===== close =====
-  function closeLiff() {
-    try {
-      if (liff.isInClient()) liff.closeWindow();
-      else setStatus("LINEアプリ内で開いている時だけ「閉じる」が効きます", false);
-    } catch (e) {
-      setOutput({ error: "close_failed", detail: String(e) });
-    }
-  }
-
-  // ===== デバッグ情報 =====
-  function buildDebugInfo(extra={}) {
-    const ctx = safe(() => liff.getContext(), null);
-    return {
-      time: new Date().toISOString(),
-      location: safe(() => window.location.href, null),
-      userAgent: safe(() => navigator.userAgent, null),
-      gasUrl: $("gasUrl").value.trim(),
-      liffId: $("liffId").value.trim(),
-      isInClient: safe(() => liff.isInClient(), null),
-      isLoggedIn: safe(() => liff.isLoggedIn(), null),
-      context: ctx,
-      hasIdToken: !!idToken,
-      hasAccessToken: !!accessToken,
-      profileName: profile ? profile.displayName : null,
-      ...extra
-    };
-  }
-
-  async function copyDebug() {
-    const info = buildDebugInfo();
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(info, null, 2));
-      setStatus("デバッグ情報をコピーしました", true);
-      setDetail(info.context && info.context.userId ? `context.userId: ${info.context.userId}` : "");
-      setOutput(info);
-    } catch (e) {
-      setStatus("コピーできませんでした（ブラウザ制限の可能性）", false);
-      setDetail("");
-      setOutput(info);
-    }
+  function closeLiff(){
+    if (liff.isInClient()) liff.closeWindow();
   }
 
   window.addEventListener("load", init);
