@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>家計簿ミニアプリ</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body{font-family:system-ui, -apple-system, "Segoe UI", sans-serif; margin:16px;}
+    .row{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;}
+    input,select,button{font-size:16px; padding:10px;}
+    table{border-collapse:collapse; width:100%;}
+    th,td{border:1px solid #ddd; padding:8px; font-size:14px;}
+    th{background:#f5f5f5; position:sticky; top:0;}
+    .card{border:1px solid #ddd; border-radius:12px; padding:12px; margin:12px 0;}
+  </style>
+</head>
+<body>
+  <h2>家計簿</h2>
+  <div id="status" class="card">初期化中…</div>
+
+  <div class="card">
+    <div class="row">
+      <button onclick="loadSummary()">今月合計</button>
+      <button onclick="loadBreakdown()">今月一覧</button>
+      <button onclick="undo()">取り消し</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>入力</h3>
+    <div class="row">
+      <input id="item" placeholder="項目（例：食費）" style="flex:2; min-width:200px;">
+      <input id="amount" placeholder="金額（例：1200）" inputmode="numeric" style="flex:1; min-width:140px;">
+    </div>
+    <div class="row">
+      <input id="memo1" placeholder="備考1（例：かずき）" style="flex:1; min-width:160px;">
+      <input id="memo2" placeholder="備考2（例：スーパー）" style="flex:2; min-width:200px;">
+      <button onclick="add()">登録</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>表示</h3>
+    <div id="out"></div>
+    <div class="row">
+      <button id="moreBtn" style="display:none;" onclick="loadMore()">もっと見る</button>
+    </div>
+  </div>
+
+<script>
+  // ★ここをあなたのGAS WebアプリURLにする
+  // 例: https://script.google.com/macros/s/AKfycb.../exec
+  const GAS_BASE_URL = "YOUR_GAS_WEBAPP_URL";
+
+  let idToken = "";
+  let nextStart = 0;
+
+  function setStatus(msg){ document.getElementById("status").textContent = msg; }
+
+  async function init(){
+    await liff.init({ liffId: "YOUR_LIFF_ID" });
+    if (!liff.isLoggedIn()) liff.login();
+    idToken = liff.getIDToken();
+    const prof = await liff.getProfile();
+    setStatus(`ログインOK：${prof.displayName}`);
+
+    // whoami で疎通確認
+    const r = await fetch(`${GAS_BASE_URL}?action=api&op=whoami&id_token=${encodeURIComponent(idToken)}`);
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "whoami failed");
+  }
+
+  async function loadSummary(){
+    const r = await fetch(`${GAS_BASE_URL}?action=api&op=summary&id_token=${encodeURIComponent(idToken)}`);
+    const j = await r.json();
+    if(!j.ok) return alert(j.error);
+
+    const rows = j.rows || [];
+    const html = `
+      <div><b>全体の残額：</b>${Number(j.overall||0).toLocaleString()}円</div>
+      <table>
+        <thead><tr><th>項目</th><th>予算</th><th>支出</th><th>残額</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td>${escapeHtml(r.name)}</td>
+              <td style="text-align:right">${Number(r.budget).toLocaleString()}</td>
+              <td style="text-align:right">${Number(r.spend).toLocaleString()}</td>
+              <td style="text-align:right; color:${r.remain<0?'#d32f2f':'#000'}">${Number(r.remain).toLocaleString()}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>`;
+    document.getElementById("out").innerHTML = html;
+    document.getElementById("moreBtn").style.display = "none";
+  }
+
+  async function loadBreakdown(){
+    nextStart = 0;
+    await loadBreakdownPage(true);
+  }
+
+  async function loadMore(){
+    await loadBreakdownPage(false);
+  }
+
+  async function loadBreakdownPage(reset){
+    const r = await fetch(`${GAS_BASE_URL}?action=api&op=breakdown&start=${nextStart}&limit=50&id_token=${encodeURIComponent(idToken)}`);
+    const j = await r.json();
+    if(!j.ok) return alert(j.error);
+
+    const rows = j.rows || [];
+    const table = `
+      <table>
+        <thead><tr><th>日付</th><th>項目</th><th>金額</th><th>備考1</th><th>備考2</th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td>${escapeHtml(String(r.date))}</td>
+              <td>${escapeHtml(r.item)}</td>
+              <td style="text-align:right">${Number(r.amount).toLocaleString()}</td>
+              <td>${escapeHtml(r.memo1||"")}</td>
+              <td>${escapeHtml(r.memo2||"")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>`;
+
+    if (reset) document.getElementById("out").innerHTML = table;
+    else document.getElementById("out").innerHTML += table;
+
+    nextStart = j.nextStart || (nextStart + rows.length);
+    document.getElementById("moreBtn").style.display = j.hasMore ? "inline-block" : "none";
+  }
+
+  async function add(){
+    const item = document.getElementById("item").value.trim();
+    const amount = Number(document.getElementById("amount").value);
+    const memo1 = document.getElementById("memo1").value || "";
+    const memo2 = document.getElementById("memo2").value || "";
+    const body = { op:"add", id_token:idToken, item, amount, memo1, memo2 };
+
+    const r = await fetch(`${GAS_BASE_URL}?action=api&op=add`, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if(!j.ok) return alert(j.error || j.msg);
+    alert("登録しました");
+  }
+
+  async function undo(){
+    const body = { op:"undo", id_token:idToken };
+    const r = await fetch(`${GAS_BASE_URL}?action=api&op=undo`, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if(!j.ok) return alert(j.msg || j.error || "undo failed");
+    alert(j.msg || "取り消しました");
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  init().catch(e=>setStatus("初期化エラー: " + e.message));
+</script>
+</body>
+</html>
