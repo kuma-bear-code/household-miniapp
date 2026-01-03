@@ -7,183 +7,420 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
-body{margin:0;background:#f6f7f9;font-family:system-ui}
-.wrap{max-width:760px;margin:auto;padding:16px 16px 96px}
-.card{background:#fff;border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 6px 22px rgba(0,0,0,.06)}
-button{height:42px;border-radius:12px;border:1px solid #ccc;background:#fff}
-.primary{background:#1DB446;color:#fff;border-color:#1DB446;font-weight:700}
-.danger{border-color:#f2b8b5;color:#d92d20;font-weight:700}
-table{width:100%;border-collapse:collapse}
-th,td{border-bottom:1px solid #eee;padding:8px;font-size:13px}
-th{color:#667085;text-align:left}
-.right{text-align:right}
-.small{font-size:12px;color:#667085}
+  body{margin:0;background:#f6f7f9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;}
+  .wrap{max-width:860px;margin:auto;padding:16px 16px 96px;}
+  .card{background:#fff;border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 6px 22px rgba(0,0,0,.06);}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .spacer{flex:1;}
+  button{height:42px;padding:0 14px;border-radius:12px;border:1px solid #d0d5dd;background:#fff;cursor:pointer;}
+  button:disabled{opacity:.55;cursor:not-allowed;}
+  .primary{background:#1DB446;color:#fff;border-color:#1DB446;font-weight:700;}
+  .danger{border-color:#f2b8b5;color:#d92d20;font-weight:700;}
+  .ghost{background:#fff;}
+  input,select{height:44px;width:100%;border-radius:12px;border:1px solid #d0d5dd;padding:0 12px;box-sizing:border-box;background:#fff;}
+  .small{font-size:12px;color:#667085;}
+  .title{font-weight:800;font-size:18px;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{border-bottom:1px solid #eef2f6;padding:9px 8px;font-size:13px;vertical-align:top;}
+  th{color:#667085;text-align:left;font-weight:700;}
+  .right{text-align:right;}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f2f4f7;color:#344054;font-size:12px;font-weight:700;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
-<div class="card">
-  <div id="status">初期化中…</div>
-  <div class="small" id="detail"></div>
-</div>
+  <!-- ステータス + 月切り替え -->
+  <div class="card">
+    <div class="row">
+      <div class="title">家計簿</div>
+      <div class="spacer"></div>
+      <span class="pill" id="monthLabel">----</span>
+    </div>
+    <div style="height:8px"></div>
+    <div class="row">
+      <button id="btnThisMonth" class="ghost" onclick="setMonthToThis()" disabled>今月</button>
+      <button id="btnPrevMonth" class="ghost" onclick="setMonthToPrev()" disabled>先月</button>
+      <div class="spacer"></div>
+      <button class="ghost" onclick="copyDebug()">デバッグコピー</button>
+    </div>
 
-<!-- 入力 -->
-<div class="card">
-  <b>入力</b><br><br>
-  <select id="item"></select><br><br>
-  <input id="amount" placeholder="金額"><br><br>
-  <select id="memo1">
-    <option>かずき</option>
-    <option>かずきカード</option>
-    <option>みく</option>
-    <option>みくカード</option>
-  </select><br><br>
-  <input id="memo2" placeholder="メモ"><br><br>
+    <div style="height:10px"></div>
+    <div id="status" class="mono">初期化中…</div>
+    <div class="small" id="detail"></div>
+  </div>
 
-  <button class="primary" onclick="add()">追加</button>
-  <button class="danger" id="undoBtn" onclick="undo()" disabled>取り消し</button>
-</div>
+  <!-- 入力 -->
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <b>入力</b>
+      <div class="spacer"></div>
+      <span class="small">追加成功後のみ「取り消し」できます</span>
+    </div>
 
-<!-- サマリ -->
-<div class="card">
-  <b>今月サマリ</b>
-  <table>
-    <thead>
-      <tr>
-        <th>項目</th>
-        <th class="right">予定</th>
-        <th class="right">合計</th>
-        <th class="right">残額</th>
-      </tr>
-    </thead>
-    <tbody id="summaryBody">
-      <tr><td colspan="4" class="small">未取得</td></tr>
-    </tbody>
-  </table>
-</div>
+    <div class="row">
+      <div style="flex:2;min-width:220px">
+        <div class="small">項目</div>
+        <select id="item"></select>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <div class="small">金額</div>
+        <input id="amount" inputmode="numeric" placeholder="例：1200">
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div class="small">メモ1</div>
+        <select id="memo1">
+          <option>かずき</option>
+          <option>かずきカード</option>
+          <option>みく</option>
+          <option>みくカード</option>
+        </select>
+      </div>
+    </div>
 
-<!-- 明細 -->
-<div class="card">
-  <b>明細</b>
-  <table>
-    <thead>
-      <tr>
-        <th>日付</th>
-        <th>項目</th>
-        <th class="right">金額</th>
-        <th>メモ</th>
-      </tr>
-    </thead>
-    <tbody id="breakdown"></tbody>
-  </table>
-</div>
+    <div style="height:10px"></div>
+    <div class="small">メモ2</div>
+    <input id="memo2" placeholder="例：昼ごはん、ドラッグストア、など">
+
+    <div style="height:12px"></div>
+    <div class="row">
+      <button class="primary" id="btnAdd" onclick="add()" disabled>追加</button>
+      <button class="danger" id="btnUndo" onclick="undo()" disabled>取り消し</button>
+      <div class="spacer"></div>
+      <button class="ghost" id="btnRefresh" onclick="refreshAll()" disabled>再読み込み</button>
+    </div>
+  </div>
+
+  <!-- サマリ -->
+  <div class="card">
+    <div class="row">
+      <b>サマリ</b>
+      <div class="spacer"></div>
+      <span class="small">予定 / 合計 / 残額</span>
+    </div>
+
+    <div style="height:10px"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th class="right">予定</th>
+          <th class="right">合計</th>
+          <th class="right">残額</th>
+        </tr>
+      </thead>
+      <tbody id="summaryBody">
+        <tr><td colspan="4" class="small">未取得</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 明細 -->
+  <div class="card">
+    <div class="row">
+      <b>明細</b>
+      <div class="spacer"></div>
+      <span class="small">日付：mm月dd日</span>
+    </div>
+
+    <div style="height:10px"></div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:86px">日付</th>
+          <th>項目</th>
+          <th class="right" style="width:96px">金額</th>
+          <th>メモ</th>
+        </tr>
+      </thead>
+      <tbody id="breakdown"></tbody>
+    </table>
+  </div>
 
 </div>
 
 <script>
-const GAS="https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
-const LIFF_ID="2008812269-var864Dv";
-let token=null;
-let lastAddSucceeded=false;
+  // ===== あなたの固定値 =====
+  const GAS = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
+  const LIFF_ID = "2008812269-var864Dv";
 
-const ITEMS=[
- '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費','お酒'
-];
+  // ===== 項目（必要なら増やしてOK）=====
+  const ITEMS = [
+    '住居費','駐車場代','貯金','食費','外食費','日用品費','その他生活費',
+    '電気','ガス','水道','通信費（携帯電話）','通信費（電話・インターネット・その他）',
+    '交通費','散髪代・美容費','衣服・靴','医療費','交際費','おこづかい',
+    '生命保険・医療保険費用','ガソリン代','車の費用（ガソリン以外）',
+    'レジャー費','その他（上記に含まれないもの）','その他（その月特別にかかる費用）','お酒'
+  ];
 
-function $(id){return document.getElementById(id);}
-function setStatus(t){$("status").textContent=t;}
-function formatMMDD(s){
- const m=s.match(/(\d{4}).?(\d{2}).?(\d{2})/);
- return m?`${Number(m[2])}月${Number(m[3])}日`:s;
-}
+  // ===== 状態 =====
+  let accessToken = null;
+  let profile = null;
+  let selectedMonth = null;  // "YYYYMM"
+  let lastAddSucceeded = false;
 
-async function init(){
- ITEMS.forEach(v=>{
-  const o=document.createElement("option");o.text=v;$("item").appendChild(o);
- });
- await liff.init({liffId:LIFF_ID});
- if(!liff.isLoggedIn()){liff.login();return;}
- token=liff.getAccessToken();
- setStatus("ログインOK");
- loadSummary();
- loadBreakdown();
-}
+  function $(id){ return document.getElementById(id); }
+  function setStatus(t){ $("status").textContent = t; }
+  function setDetail(t){ $("detail").textContent = t || ""; }
 
-async function getJson(url){
- const r=await fetch(url);return JSON.parse(await r.text());
-}
-async function post(body){
- const r=await fetch(GAS+"?action=api",{method:"POST",body:JSON.stringify(body)});
- return JSON.parse(await r.text());
-}
+  function ymNow(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    return `${y}${m}`;
+  }
+  function ymPrev(ym){
+    const y = Number(ym.slice(0,4));
+    const m = Number(ym.slice(4,6));
+    const d = new Date(y, m-1, 1);
+    d.setMonth(d.getMonth()-1);
+    const yy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    return `${yy}${mm}`;
+  }
+  function labelFromYM(ym){
+    const y = Number(ym.slice(0,4));
+    const m = Number(ym.slice(4,6));
+    return `${y}年${m}月`;
+  }
+  function formatMMDD(s){
+    // "yyyy/MM/dd" or "yyyy-MM-dd" を想定
+    const m = String(s||"").match(/(\d{4}).?(\d{2}).?(\d{2})/);
+    if(!m) return s;
+    return `${Number(m[2])}月${Number(m[3])}日`;
+  }
 
-async function add(){
- setStatus("追加中…");
- lastAddSucceeded=false;
- $("undoBtn").disabled=true;
+  // ===== ネットワーク =====
+  async function getJson(url){
+    const r = await fetch(url, { method:"GET", cache:"no-store" });
+    const txt = await r.text();
+    try { return JSON.parse(txt); }
+    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status }; }
+  }
+  async function postJson(body){
+    const r = await fetch(GAS + "?action=api", {
+      method:"POST",
+      cache:"no-store",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    });
+    const txt = await r.text();
+    try { return JSON.parse(txt); }
+    catch { return { ok:false, error:"non_json_response", body:txt, status:r.status }; }
+  }
 
- const res=await post({
-  op:"add",access_token:token,
-  item:$("item").value,
-  amount:Number($("amount").value),
-  memo1:$("memo1").value,
-  memo2:$("memo2").value
- });
+  // ===== 月切り替え =====
+  function setMonth(ym){
+    selectedMonth = ym;
+    $("monthLabel").textContent = labelFromYM(ym);
+    refreshAll(); // 月が変わったら読み直す
+  }
+  function setMonthToThis(){ setMonth(ymNow()); }
+  function setMonthToPrev(){ setMonth(ymPrev(ymNow())); }
 
- if(res.ok){
-  setStatus("追加OK");
-  lastAddSucceeded=true;
-  $("undoBtn").disabled=false;
-  loadSummary(); loadBreakdown();
- }else{
-  setStatus("追加NG："+res.error);
- }
-}
+  // ===== 読み込み =====
+  async function loadSummary(){
+    const url = `${GAS}?action=api&op=summary&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
+    const r = await getJson(url);
 
-async function undo(){
- if(!lastAddSucceeded) return;
- setStatus("取り消し中…");
- const res=await post({op:"undo",access_token:token});
- if(res.ok){
-  setStatus("取り消しました");
-  $("undoBtn").disabled=true;
-  lastAddSucceeded=false;
-  loadSummary(); loadBreakdown();
- }else{
-  setStatus("取り消しNG");
- }
-}
+    const tb = $("summaryBody");
+    tb.innerHTML = "";
 
-async function loadSummary(){
- const r=await getJson(GAS+"?action=api&op=summary&access_token="+token);
- const tb=$("summaryBody"); tb.innerHTML="";
- (r.items||[]).forEach(i=>{
-  const rest=i.planned-i.actual;
-  tb.innerHTML+=`<tr>
-    <td>${i.item}</td>
-    <td class="right">${i.planned.toLocaleString()}</td>
-    <td class="right">${i.actual.toLocaleString()}</td>
-    <td class="right">${rest.toLocaleString()}</td>
-  </tr>`;
- });
-}
+    if(!r || r.ok !== true){
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${(r && (r.error||r.body)) || "unknown"}</td></tr>`;
+      return;
+    }
 
-async function loadBreakdown(){
- const r=await getJson(GAS+"?action=api&op=breakdown&access_token="+token);
- const tb=$("breakdown"); tb.innerHTML="";
- (r.rows||[]).forEach(v=>{
-  tb.innerHTML+=`<tr>
-    <td>${formatMMDD(v[0])}</td>
-    <td>${v[1]}</td>
-    <td class="right">${v[2]}</td>
-    <td>${v[3]||""} ${v[4]||""}</td>
-  </tr>`;
- });
-}
+    const items = r.items || [];
+    if(items.length === 0){
+      tb.innerHTML = `<tr><td colspan="4" class="small">データなし</td></tr>`;
+      return;
+    }
 
-window.onload=init;
+    for(const it of items){
+      const planned = Number(it.planned || 0);
+      const actual  = Number(it.actual  || 0);
+      const rest = planned - actual;
+      tb.innerHTML += `
+        <tr>
+          <td>${it.item || ""}</td>
+          <td class="right">${planned.toLocaleString()}</td>
+          <td class="right">${actual.toLocaleString()}</td>
+          <td class="right">${rest.toLocaleString()}</td>
+        </tr>
+      `;
+    }
+  }
+
+  async function loadBreakdown(){
+    const url = `${GAS}?action=api&op=breakdown&month=${encodeURIComponent(selectedMonth)}&access_token=${encodeURIComponent(accessToken)}`;
+    const r = await getJson(url);
+
+    const tb = $("breakdown");
+    tb.innerHTML = "";
+
+    if(!r || r.ok !== true){
+      tb.innerHTML = `<tr><td colspan="4" class="small">取得失敗：${(r && (r.error||r.body)) || "unknown"}</td></tr>`;
+      return;
+    }
+
+    const rows = r.rows || [];
+    if(rows.length === 0){
+      tb.innerHTML = `<tr><td colspan="4" class="small">明細なし</td></tr>`;
+      return;
+    }
+
+    for(const v of rows){
+      const date = formatMMDD(v[0]);
+      const item = v[1] || "";
+      const amt  = (v[2] ?? "");
+      const memo = `${v[3]||""} ${v[4]||""}`.trim();
+      tb.innerHTML += `
+        <tr>
+          <td>${date}</td>
+          <td>${item}</td>
+          <td class="right">${String(amt).toLocaleString?.() ?? amt}</td>
+          <td>${memo}</td>
+        </tr>
+      `;
+    }
+  }
+
+  async function refreshAll(){
+    if(!accessToken || !selectedMonth) return;
+    $("btnRefresh").disabled = true;
+    setStatus("読み込み中…");
+    try{
+      await Promise.all([loadSummary(), loadBreakdown()]);
+      setStatus("表示更新OK");
+    }catch(e){
+      setStatus("読み込みエラー");
+      setDetail(String(e && e.message ? e.message : e));
+    }finally{
+      $("btnRefresh").disabled = false;
+    }
+  }
+
+  // ===== 入力 =====
+  function setUndoEnabled(on){
+    $("btnUndo").disabled = !on;
+  }
+
+  async function add(){
+    const amountText = $("amount").value;
+    const amount = Number(String(amountText).replace(/,/g,'').trim());
+    const body = {
+      op:"add",
+      access_token: accessToken,
+      item: $("item").value,
+      amount,
+      memo1: $("memo1").value,
+      memo2: $("memo2").value
+    };
+
+    lastAddSucceeded = false;
+    setUndoEnabled(false);
+    setStatus("追加中…");
+    setDetail("");
+
+    const r = await postJson(body);
+
+    if(r && r.ok === true){
+      setStatus("追加OK");
+      lastAddSucceeded = true;
+      setUndoEnabled(true);
+      $("amount").value = "";
+      $("memo2").value = "";
+      await refreshAll();
+    }else{
+      setStatus("追加NG");
+      setDetail((r && (r.error || r.body)) || "unknown");
+    }
+  }
+
+  async function undo(){
+    if(!lastAddSucceeded) return;
+
+    setStatus("取り消し中…");
+    setDetail("");
+    $("btnUndo").disabled = true; // 連打防止
+
+    const r = await postJson({ op:"undo", access_token: accessToken });
+
+    if(r && r.ok === true){
+      setStatus("取り消しOK");
+      lastAddSucceeded = false;
+      setUndoEnabled(false);
+      await refreshAll();
+    }else{
+      setStatus("取り消しNG");
+      setDetail((r && (r.error || r.msg || r.body)) || "unknown");
+      // 失敗ならもう一度押せるように戻す（ただし add 直後前提）
+      setUndoEnabled(true);
+    }
+  }
+
+  // ===== デバッグ =====
+  async function copyDebug(){
+    const info = {
+      month: selectedMonth,
+      monthLabel: $("monthLabel").textContent,
+      isLoggedIn: liff.isLoggedIn(),
+      isInClient: liff.isInClient(),
+      hasAccessToken: !!accessToken,
+      displayName: profile ? profile.displayName : null
+    };
+    try{
+      await navigator.clipboard.writeText(JSON.stringify(info,null,2));
+      setStatus("デバッグコピーOK");
+      setDetail("");
+    }catch{
+      setStatus("コピー失敗（ブラウザ制限かも）");
+      setDetail("");
+    }
+  }
+
+  // ===== 初期化 =====
+  async function init(){
+    // items
+    for(const v of ITEMS){
+      const o = document.createElement("option");
+      o.textContent = v;
+      o.value = v;
+      $("item").appendChild(o);
+    }
+
+    setStatus("LIFF 初期化中…");
+    await liff.init({ liffId: LIFF_ID });
+
+    if(!liff.isLoggedIn()){
+      liff.login();
+      return;
+    }
+
+    accessToken = liff.getAccessToken();
+    try{ profile = await liff.getProfile(); }catch{ profile = null; }
+
+    setStatus("ログインOK");
+    setDetail(profile ? `ログイン：${profile.displayName}` : "");
+
+    // UI enable
+    $("btnAdd").disabled = false;
+    $("btnRefresh").disabled = false;
+    $("btnThisMonth").disabled = false;
+    $("btnPrevMonth").disabled = false;
+
+    // ✅ デフォルトは「今月」へ（＝自動リダイレクトと同じノリ）
+    selectedMonth = ymNow();
+    $("monthLabel").textContent = labelFromYM(selectedMonth);
+
+    await refreshAll();
+  }
+
+  window.addEventListener("load", init);
 </script>
+
 </body>
 </html>
