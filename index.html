@@ -5,361 +5,69 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>家計簿ミニアプリ</title>
 
-  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
-    :root{
-      --bg:#0b0f17;
-      --card:#121a27;
-      --text:#e7eefc;
-      --muted:#9fb0cf;
-      --line:#1db446;
-      --danger:#ff5b5b;
-      --border: rgba(255,255,255,.08);
-      --shadow: 0 10px 28px rgba(0,0,0,.35);
-      --radius: 16px;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0; padding:16px;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(29,180,70,.20), transparent 55%),
-                  radial-gradient(900px 450px at 90% 0%, rgba(100,160,255,.16), transparent 55%),
-                  var(--bg);
-      color:var(--text);
-    }
-    header{
-      display:flex; gap:12px; align-items:center; justify-content:space-between;
-      margin-bottom:12px;
-    }
-    h1{
-      margin:0; font-size:18px; letter-spacing:.02em;
-    }
-    .pill{
-      display:inline-flex; gap:8px; align-items:center;
-      padding:8px 10px;
-      background: rgba(255,255,255,.06);
-      border:1px solid var(--border);
-      border-radius:999px;
-      color:var(--muted);
-      font-size:12px;
-      max-width: 68%;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-      max-width: 980px;
-      margin: 0 auto;
-    }
-    .card{
-      background: rgba(18,26,39,.92);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-    }
-    .row{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-    }
-    .muted{ color:var(--muted); font-size:12px; }
-    .ok{ color: #87f5a8; font-weight:700; }
-    .ng{ color: var(--danger); font-weight:700; }
-    .divider{ height:1px; background: var(--border); margin: 10px 0; }
-    button{
-      padding:10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      cursor:pointer;
-      transition: transform .04s ease;
-    }
-    button:active{ transform: scale(.99); }
-    button.primary{
-      background: rgba(29,180,70,.15);
-      border-color: rgba(29,180,70,.45);
-    }
-    button.danger{
-      background: rgba(255,91,91,.12);
-      border-color: rgba(255,91,91,.40);
-    }
-    button:disabled{
-      opacity:.45;
-      cursor:not-allowed;
-    }
-    input, select, textarea{
-      width:100%;
-      padding:10px 12px;
-      border-radius: 12px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color: var(--text);
-      outline:none;
-    }
-    textarea{ min-height: 72px; resize: vertical; }
-    .two{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    .three{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width: 720px){
-      .two, .three{ grid-template-columns: 1fr; }
-      .pill{ max-width: 100%; }
-    }
-
-    /* summary table */
-    table{
-      width:100%;
-      border-collapse: collapse;
-      overflow:hidden;
-      border-radius: 12px;
-    }
-    th, td{
-      padding:10px 10px;
-      border-bottom:1px solid var(--border);
-      text-align:left;
-      font-size:13px;
-    }
-    th{ color: var(--muted); font-weight:600; }
-    tr:last-child td{ border-bottom:none; }
-    .num{ text-align:right; font-variant-numeric: tabular-nums; }
-    .tag{
-      display:inline-block;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.05);
-      color: var(--muted);
-      font-size: 11px;
-    }
-    .big{
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: .02em;
-    }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .list{
-      display:flex; flex-direction:column; gap:8px;
-    }
-    .itemrow{
-      display:grid;
-      grid-template-columns: 92px 1fr 90px;
-      gap:10px;
-      padding:10px;
-      border:1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(255,255,255,.03);
-    }
-    .right{ text-align:right; font-variant-numeric: tabular-nums; }
-    .small{ font-size:12px; color:var(--muted); }
-    .grow{ overflow:hidden; }
-    .truncate{
-      overflow:hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    details > summary{
-      cursor:pointer;
-      color: var(--muted);
-      user-select:none;
-      list-style:none;
-    }
-    details > summary::-webkit-details-marker{ display:none; }
-    pre{
-      margin:0;
-      padding:12px;
-      border-radius: 12px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.35);
-      color: #d8e6ff;
-      overflow:auto;
-      font-size:12px;
-    }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    button.primary { background: #1DB446; color: #fff; border-color: #1DB446; }
+    button.danger { background: #c62828; color: #fff; border-color: #c62828; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    pre { background:#111; color:#ddd; padding:12px; border-radius:12px; overflow:auto; }
+    .muted { color:#666; font-size: 12px; }
+    .ok { color:#1b8f3a; font-weight: 700; }
+    .ng { color:#c62828; font-weight: 700; }
+    input { padding:10px 12px; border-radius:10px; border:1px solid #ccc; width: 100%; box-sizing: border-box;}
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
   </style>
 </head>
 
 <body>
-  <div class="grid">
-    <header>
-      <div>
-        <h1>家計簿ミニアプリ</h1>
-        <div class="muted" id="subTitle">LINEで家計簿を“ちゃんと使える”形に。</div>
-      </div>
-      <div class="pill" id="statusPill">初期化中…</div>
-    </header>
+  <h2>家計簿ミニアプリ</h2>
+  <div class="muted">
+    目的：LIFFでログイン→access_tokenを取得→GASで userId(Uxxxx) を確定し、2人だけ許可します。
+  </div>
 
-    <!-- 接続・状態 -->
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <div class="muted">ログイン状態</div>
-          <div id="statusText">LIFF 初期化中…</div>
-          <div class="muted" id="statusDetail"></div>
-        </div>
-        <div class="row">
-          <button id="btnClose" onclick="closeLiff()" disabled>閉じる</button>
-          <button onclick="copyDebug()">デバッグコピー</button>
-        </div>
-      </div>
+  <div class="card">
+    <div><b>ステータス</b></div>
+    <div id="status">初期化中…</div>
+    <div class="muted" id="detail"></div>
+  </div>
 
-      <div class="divider"></div>
-
-      <div class="two">
-        <div>
-          <div class="muted">GAS WebApp URL</div>
-          <input id="gasUrl" />
-        </div>
-        <div>
-          <div class="muted">LIFF ID</div>
-          <input id="liffId" />
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="three">
-        <div>
-          <div class="muted">対象月</div>
-          <select id="monthPreset" onchange="onMonthPresetChange()">
-            <option value="current">今月</option>
-            <option value="prev">先月</option>
-            <option value="custom">指定（yyyyMM）</option>
-          </select>
-        </div>
-        <div>
-          <div class="muted">yyyyMM</div>
-          <input id="monthCustom" placeholder="例：202601" disabled />
-        </div>
-        <div class="row" style="align-items:flex-end;">
-          <button class="primary" id="btnRefresh" onclick="refreshAll()" disabled>更新</button>
-        </div>
-      </div>
-
-      <div class="muted" style="margin-top:8px;">
-        ※ MiniApp は <span class="mono">access_token</span> をGASに渡します。ブラウザで開くと accessToken が取れず動きません（LINE内推奨）。
-      </div>
+  <div class="card">
+    <div><b>接続先</b></div>
+    <div class="muted">GAS WebApp URL</div>
+    <input id="gasUrl" />
+    <div class="muted" style="margin-top:8px;">LIFF ID</div>
+    <input id="liffId" />
+    <div class="muted" style="margin-top:8px;">
+      ※ まずはこのまま触らずOK。将来URLを変える時に使えます。
     </div>
+  </div>
 
-    <!-- サマリ -->
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <div class="muted">今月の残額</div>
-          <div class="big" id="overallRemain">-</div>
-          <div class="muted" id="summaryMonthLabel"></div>
-        </div>
-        <div class="row">
-          <span class="tag" id="whoamiTag">未確認</span>
-          <button id="btnWhoami" onclick="whoami()" disabled>本人確認</button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="muted">カテゴリ別（予算 / 支出 / 残額）</div>
-      <div style="margin-top:8px; overflow:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:140px;">項目</th>
-              <th class="num" style="min-width:92px;">予算</th>
-              <th class="num" style="min-width:92px;">支出</th>
-              <th class="num" style="min-width:92px;">残額</th>
-            </tr>
-          </thead>
-          <tbody id="summaryRows">
-            <tr><td colspan="4" class="muted">読み込み待ち…</td></tr>
-          </tbody>
-        </table>
-      </div>
+  <div class="card">
+    <div class="row">
+      <button class="primary" id="btnLogin" onclick="doLogin()" disabled>ログイン</button>
+      <button class="primary" id="btnWhoami" onclick="whoami()" disabled>whoami（本人確認）</button>
+      <button id="btnSummary" onclick="loadSummary()" disabled>今月サマリ</button>
+      <button id="btnProfile" onclick="showProfile()" disabled>プロフィール表示</button>
+      <button id="btnClose" onclick="closeLiff()" disabled>閉じる</button>
+      <button onclick="copyDebug()">デバッグ情報コピー</button>
     </div>
-
-    <!-- 支出追加 -->
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <div style="font-weight:800;">支出を追加</div>
-          <div class="muted">MiniApp → GAS(POST add) → スプレッドシートに記録</div>
-        </div>
-        <button class="danger" id="btnUndo" onclick="undoLast()" disabled>直前を取り消し</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="two">
-        <div>
-          <div class="muted">項目</div>
-          <select id="itemSelect"></select>
-        </div>
-        <div>
-          <div class="muted">金額</div>
-          <input id="amountInput" inputmode="numeric" placeholder="例：1200" />
-        </div>
-      </div>
-
-      <div class="two" style="margin-top:10px;">
-        <div>
-          <div class="muted">備考1（例：かずき / みく / カード）</div>
-          <input id="memo1Input" placeholder="任意" />
-        </div>
-        <div>
-          <div class="muted">備考2（任意）</div>
-          <input id="memo2Input" placeholder="任意" />
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:10px; justify-content:flex-end;">
-        <button class="primary" id="btnAdd" onclick="addExpense()" disabled>追加する</button>
-      </div>
-
-      <div class="muted" id="addHint" style="margin-top:6px;"></div>
+    <div class="muted" style="margin-top:8px;">
+      ログインできない場合でも「デバッグ情報コピー」を押して貼ってください（userIdが取れればそこに出ます）。
     </div>
+  </div>
 
-    <!-- 内訳 -->
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <div style="font-weight:800;">内訳（最新順）</div>
-          <div class="muted">breakdown をページングで表示</div>
-        </div>
-        <div class="row">
-          <button id="btnMore" onclick="loadMore()" disabled>もっと見る</button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="list" id="breakdownList">
-        <div class="muted">読み込み待ち…</div>
-      </div>
-
-      <div class="muted" id="breakdownMeta" style="margin-top:8px;"></div>
-    </div>
-
-    <!-- デバッグ -->
-    <div class="card">
-      <details>
-        <summary>デバッグ出力（困ったらここを貼る）</summary>
-        <div style="margin-top:10px;">
-          <pre id="debugOut">（ここに表示）</pre>
-        </div>
-      </details>
-    </div>
-
+  <div class="card">
+    <div><b>レスポンス / デバッグ</b></div>
+    <pre id="output">（ここに結果が出ます）</pre>
   </div>
 
 <script>
-  // ===== 固定（あなたの値で埋め込み済み） =====
+  // ===== 固定（あなたの値） =====
   const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
   const DEFAULT_LIFF_ID = "2008812269-var864Dv";
 
@@ -367,463 +75,205 @@
   let idToken = null;
   let accessToken = null;
   let profile = null;
-  let userId = null;
+  let liffContext = null;
 
-  // breakdown paging
-  let breakdownStart = 0;
-  let breakdownTotal = 0;
-  const breakdownLimit = 30;
-  let breakdownHasMore = false;
-
-  // ===== UI helper =====
+  // ===== UI helpers =====
   const $ = (id) => document.getElementById(id);
-  function yen(n){
-    const x = Number(n || 0);
-    try { return x.toLocaleString("ja-JP"); } catch(e){ return String(x); }
-  }
-  function setPill(text, ok=null){
-    const el = $("statusPill");
+  function setStatus(text, ok=null) {
+    const el = $("status");
     el.textContent = text;
-    el.style.borderColor = ok === null ? "var(--border)" : (ok ? "rgba(135,245,168,.45)" : "rgba(255,91,91,.45)");
-    el.style.background = ok === null ? "rgba(255,255,255,.06)" : (ok ? "rgba(135,245,168,.12)" : "rgba(255,91,91,.12)");
-    el.style.color = ok === null ? "var(--muted)" : (ok ? "#87f5a8" : "var(--danger)");
+    el.className = ok === null ? "" : (ok ? "ok" : "ng");
   }
-  function setStatus(text, ok=null){
-    $("statusText").textContent = text;
-    $("statusText").className = ok === null ? "" : (ok ? "ok" : "ng");
-  }
-  function setDetail(text){ $("statusDetail").textContent = text || ""; }
-  function setDebug(obj){
-    $("debugOut").textContent = (typeof obj === "string") ? obj : JSON.stringify(obj, null, 2);
+  function setDetail(text) { $("detail").textContent = text || ""; }
+  function setOutput(objOrText) {
+    $("output").textContent = (typeof objOrText === "string")
+      ? objOrText
+      : JSON.stringify(objOrText, null, 2);
   }
 
-  function enableMain(enabled){
-    $("btnClose").disabled = !enabled;
-    $("btnRefresh").disabled = !enabled;
-    $("btnWhoami").disabled = !enabled;
-    $("btnAdd").disabled = !enabled;
-    $("btnUndo").disabled = !enabled;
-    $("btnMore").disabled = !enabled; // 実際の可否は loadBreakdown で更新
+  function enableButtons({ login=false, authed=false }) {
+    $("btnLogin").disabled = !login;
+
+    $("btnWhoami").disabled = !authed;
+    $("btnSummary").disabled = !authed;
+    $("btnProfile").disabled = !authed;
+    $("btnClose").disabled = !authed;
   }
 
-  // ===== 月選択 =====
-  function yyyymm(d){
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    return `${y}${m}`;
-  }
-  function getSelectedMonth(){
-    const preset = $("monthPreset").value;
-    if (preset === "current") return yyyymm(new Date());
-    if (preset === "prev"){
-      const d = new Date(); d.setMonth(d.getMonth()-1);
-      return yyyymm(d);
-    }
-    return ($("monthCustom").value || "").trim();
-  }
-  function onMonthPresetChange(){
-    const preset = $("monthPreset").value;
-    $("monthCustom").disabled = (preset !== "custom");
+  function safe(fn, fallback=null) {
+    try { return fn(); } catch { return fallback; }
   }
 
-  // ===== fetch helper =====
-  async function fetchText(url, opt){
-    const res = await fetch(url, opt || { method:"GET", cache:"no-store" });
-    const text = await res.text();
-    return { res, text };
-  }
-  async function fetchJson(url, opt){
-    const { res, text } = await fetchText(url, opt);
-    try { return JSON.parse(text); }
-    catch(e){
-      return { ok:false, error:"non_json_response", httpStatus: res.status, body: text };
-    }
-  }
-
-  function gasBase(){
-    return $("gasUrl").value.trim();
-  }
-
-  // ===== API calls =====
-  async function apiGet(op, params){
-    const base = gasBase();
-    const qs = new URLSearchParams({
-      action: "api",
-      op,
-      access_token: accessToken || "",
-      ...(params || {})
-    });
-    return await fetchJson(`${base}?${qs.toString()}`);
-  }
-
-  async function apiPost(body){
-    const base = gasBase();
-    const url = `${base}?action=api`;
-    return await fetchJson(url, {
-      method: "POST",
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-  }
-
-  // ===== init =====
-  async function init(){
+  // ===== LIFF 初期化 =====
+  async function init() {
     $("gasUrl").value = DEFAULT_GAS_URL;
     $("liffId").value = DEFAULT_LIFF_ID;
-    onMonthPresetChange();
 
-    try{
-      setPill("LIFF 初期化中…");
+    try {
       setStatus("LIFF 初期化中…");
       await liff.init({ liffId: DEFAULT_LIFF_ID });
 
-      if (!liff.isLoggedIn()){
-        setPill("LINEログインが必要です", false);
-        setStatus("LINEログインが必要です。ログイン画面へ…", false);
-        liff.login();
+      // ここはログイン状態に関係なく取れることがある
+      liffContext = safe(() => liff.getContext(), null);
+
+      const loggedIn = liff.isLoggedIn();
+      const inClient = liff.isInClient();
+
+      // ログインしてない場合：自動ログインに飛ばさず、情報を表示してボタンを出す
+      if (!loggedIn) {
+        setStatus("未ログイン（ログインが必要）", false);
+
+        const debug = buildDebugInfo({ note: "未ログインなので access_token / profile は取得不可。getContext() に userId が出る場合だけ表示されます。" });
+        setOutput(debug);
+
+        setDetail(
+          (debug.context && debug.context.userId)
+            ? `getContext.userId が取れました：${debug.context.userId}`
+            : "getContext.userId は取得できませんでした（起動経路/権限次第で null になります）"
+        );
+
+        enableButtons({ login:true, authed:false });
         return;
       }
 
+      // ログイン済み
       idToken = liff.getIDToken();
       accessToken = liff.getAccessToken();
-      try { profile = await liff.getProfile(); } catch(e){ profile = null; }
+      try { profile = await liff.getProfile(); } catch { profile = null; }
 
-      if (!accessToken){
-        // LINE外ブラウザ等だとここが null になりがち
-        setPill("accessToken が取れません（LINE内で開いてください）", false);
-        setStatus("accessToken が取れません", false);
-        setDetail("LINEアプリ内のLIFFで開いているか確認してください。");
-        enableMain(false);
-        setDebug({
-          note: "accessToken missing",
-          isInClient: liff.isInClient(),
-          isLoggedIn: liff.isLoggedIn(),
-          hasIdToken: !!idToken,
-          hasAccessToken: !!accessToken,
-          profile: profile || null
-        });
-        return;
-      }
+      setStatus("初期化OK（ログイン済み）", true);
+      setDetail(profile ? `ログイン：${profile.displayName}` : "ログイン：profile未取得");
+      enableButtons({ login:false, authed:true });
 
-      setPill("初期化OK", true);
-      setStatus("初期化OK", true);
-      setDetail(profile ? `ログイン：${profile.displayName}` : "ログイン：取得中");
-      enableMain(true);
+      // 起動直後に whoami したいならここをON
+      // await whoami();
 
-      // items読み込み
-      await loadItems();
-
-      // whoamiでuserId確定＆初回更新
-      await whoami();
-      await refreshAll();
-
-    }catch(err){
-      setPill("初期化エラー", false);
+    } catch (err) {
       setStatus("初期化エラー", false);
       setDetail(String(err && err.message ? err.message : err));
-      enableMain(false);
-      setDebug({ error:"liff_init_failed", detail: String(err) });
+      setOutput(buildDebugInfo({ error: String(err), note: "liff.init() 自体が失敗しています。LIFF ID / エンドポイントURL / 設定を確認。" }));
+      enableButtons({ login:false, authed:false });
     }
   }
 
-  // ===== whoami =====
-  async function whoami(){
-    if (!accessToken){
-      setPill("accessTokenなし", false);
-      setStatus("access_token がありません（初期化未完了）", false);
-      return;
+  function doLogin() {
+    try {
+      // redirectUri を付けると迷子になりにくい
+      const redirectUri = window.location.href;
+      liff.login({ redirectUri });
+    } catch (e) {
+      setStatus("login 呼び出し失敗", false);
+      setOutput({ error: "login_failed", detail: String(e) });
     }
-
-    setPill("本人確認中…");
-    const json = await apiGet("whoami");
-    setDebug({ whoami: json });
-
-    if (json.ok && json.userId){
-      userId = json.userId;
-      $("whoamiTag").textContent = `OK: ${userId}`;
-      $("whoamiTag").className = "tag";
-      setPill("本人確認OK", true);
-      setStatus("本人確認OK", true);
-      return;
-    }
-
-    $("whoamiTag").textContent = "NG";
-    setPill("本人確認NG", false);
-    setStatus("本人確認NG", false);
-    setDetail(json.error ? String(json.error) : "GAS応答を確認");
   }
 
-  // ===== items =====
-  async function loadItems(){
-    const sel = $("itemSelect");
-    sel.innerHTML = "";
-    const json = await apiGet("items");
-    setDebug({ items: json });
-
-    const items = (json.ok && Array.isArray(json.items)) ? json.items : [];
-    if (!items.length){
-      // fallback（万が一）
-      const fallback = ["食費","外食費","日用品費","交通費","お酒"];
-      fallback.forEach(x => {
-        const o = document.createElement("option"); o.value=x; o.textContent=x;
-        sel.appendChild(o);
-      });
-      $("addHint").textContent = "items取得に失敗したため、簡易候補を表示中";
-      return;
-    }
-    items.forEach(x => {
-      const o = document.createElement("option");
-      o.value = x;
-      o.textContent = x;
-      sel.appendChild(o);
-    });
-    $("addHint").textContent = "";
+  // ===== GAS 呼び出し（GETしてJSON期待）=====
+  async function fetchJson(url) {
+    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch (_) { return { error: "non_json_response", httpStatus: res.status, body: text }; }
   }
 
-  // ===== summary =====
-  async function loadSummary(){
-    const month = getSelectedMonth();
-    $("summaryMonthLabel").textContent = month ? `対象月：${month}` : "対象月：未指定";
-
-    if (!month || !/^\d{6}$/.test(month)){
-      setPill("month指定が不正", false);
-      setStatus("対象月が不正です（yyyyMM）", false);
+  // ===== whoami（GASへ）=====
+  async function whoami() {
+    if (!accessToken) {
+      setStatus("access_token がありません（未ログイン）", false);
+      setOutput(buildDebugInfo({ note:"未ログインのため whoami は実行できません。ログインして access_token を取得してください。" }));
       return;
     }
 
-    const json = await apiGet("summary", { month });
-    setDebug({ summary: json });
+    const gasUrl = $("gasUrl").value.trim();
+    const url = `${gasUrl}?action=api&op=whoami&access_token=${encodeURIComponent(accessToken)}`;
 
-    if (!(json.ok)){
-      setPill("summary NG", false);
-      setStatus("summary NG", false);
-      setDetail(json.error ? String(json.error) : "GAS応答を確認");
+    setStatus("whoami 実行中…");
+    setDetail("GASへ問い合わせています…");
+
+    const json = await fetchJson(url);
+    setOutput(json);
+
+    if (json.ok && json.userId) {
+      setStatus("whoami OK（userId取得）", true);
+      setDetail(`userId: ${json.userId}`);
+    } else {
+      setStatus("whoami NG", false);
+      setDetail(JSON.stringify(json));
+    }
+  }
+
+  // ===== summary（GASへ）=====
+  async function loadSummary() {
+    if (!accessToken) {
+      setStatus("access_token がありません（未ログイン）", false);
       return;
     }
+    const gasUrl = $("gasUrl").value.trim();
+    const url = `${gasUrl}?action=api&op=summary&access_token=${encodeURIComponent(accessToken)}`;
 
-    $("overallRemain").textContent = `${yen(json.overall)} 円`;
-    const tbody = $("summaryRows");
-    tbody.innerHTML = "";
+    setStatus("summary 実行中…");
+    const json = await fetchJson(url);
+    setOutput(json);
 
-    const rows = Array.isArray(json.rows) ? json.rows : [];
-    if (!rows.length){
-      tbody.innerHTML = `<tr><td colspan="4" class="muted">データがありません</td></tr>`;
-      setPill("summary OK", true);
+    if (json.ok) {
       setStatus("summary OK", true);
-      return;
+      setDetail(`month: ${json.month || ""} / overall: ${json.overall}`);
+    } else {
+      setStatus("summary NG", false);
+      setDetail(JSON.stringify(json));
     }
-
-    for (const r of rows){
-      const tr = document.createElement("tr");
-      const name = String(r.name ?? "");
-      const budget = Number(r.budget ?? 0);
-      const spend  = Number(r.spend  ?? 0);
-      const remain = Number(r.remain ?? 0);
-
-      tr.innerHTML = `
-        <td>${escapeHtml(name)}</td>
-        <td class="num">${yen(budget)}</td>
-        <td class="num">${yen(spend)}</td>
-        <td class="num">${yen(remain)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    setPill("更新OK", true);
-    setStatus("更新OK", true);
-    setDetail(profile ? `ログイン：${profile.displayName}` : "");
   }
 
-  // ===== breakdown =====
-  async function loadBreakdown(reset){
-    const month = getSelectedMonth();
-    if (!month || !/^\d{6}$/.test(month)){
-      $("breakdownList").innerHTML = `<div class="muted">対象月が不正です（yyyyMM）</div>`;
-      $("btnMore").disabled = true;
-      return;
+  // ===== profile 表示 =====
+  async function showProfile() {
+    try {
+      if (!profile) profile = await liff.getProfile();
+      setOutput({ profile });
+    } catch (e) {
+      setOutput({ error: "getProfile_failed", detail: String(e) });
     }
-
-    if (reset){
-      breakdownStart = 0;
-      breakdownTotal = 0;
-      breakdownHasMore = false;
-      $("breakdownList").innerHTML = "";
-      $("breakdownMeta").textContent = "";
-    }
-
-    const json = await apiGet("breakdown", {
-      month,
-      start: String(breakdownStart),
-      limit: String(breakdownLimit)
-    });
-
-    setDebug({ breakdown: json });
-
-    if (!json.ok){
-      $("breakdownList").innerHTML = `<div class="muted">breakdown 取得失敗：${escapeHtml(String(json.error||""))}</div>`;
-      $("btnMore").disabled = true;
-      return;
-    }
-
-    breakdownTotal = Number(json.total || 0);
-    breakdownHasMore = !!json.hasMore;
-    breakdownStart = Number(json.nextStart || 0);
-
-    const rows = Array.isArray(json.rows) ? json.rows : [];
-    if (!rows.length && reset){
-      $("breakdownList").innerHTML = `<div class="muted">内訳がありません</div>`;
-    }
-
-    const list = $("breakdownList");
-    for (const r of rows){
-      const el = document.createElement("div");
-      el.className = "itemrow";
-      el.innerHTML = `
-        <div class="small mono truncate">${escapeHtml(String(r.date||""))}</div>
-        <div class="grow">
-          <div class="truncate">${escapeHtml(String(r.item||""))}</div>
-          <div class="small truncate">${escapeHtml((r.memo1||"") + (r.memo2 ? " / " + r.memo2 : ""))}</div>
-        </div>
-        <div class="right mono">${yen(r.amount)}円</div>
-      `;
-      list.appendChild(el);
-    }
-
-    $("breakdownMeta").textContent = `表示：${Math.min(breakdownStart, breakdownTotal)} / ${breakdownTotal}`;
-    $("btnMore").disabled = !breakdownHasMore;
   }
 
-  async function loadMore(){
-    await loadBreakdown(false);
-  }
-
-  // ===== add / undo =====
-  async function addExpense(){
-    const month = getSelectedMonth();
-    if (!month || !/^\d{6}$/.test(month)){
-      setPill("month指定が不正", false);
-      setStatus("対象月が不正です（yyyyMM）", false);
-      return;
-    }
-
-    const item = $("itemSelect").value;
-    const amountRaw = $("amountInput").value.trim();
-    const amount = parseInt(amountRaw.replace(/,/g,""), 10);
-
-    if (!item){
-      setPill("項目未選択", false);
-      setStatus("項目を選んでください", false);
-      return;
-    }
-    if (!Number.isFinite(amount)){
-      setPill("金額が不正", false);
-      setStatus("金額を数値で入力してください", false);
-      return;
-    }
-
-    const memo1 = $("memo1Input").value || "";
-    const memo2 = $("memo2Input").value || "";
-
-    setPill("追加中…");
-    const json = await apiPost({
-      op: "add",
-      access_token: accessToken,
-      item,
-      amount,
-      memo1,
-      memo2,
-      month
-    });
-
-    setDebug({ add: json });
-
-    if (json.ok){
-      setPill("追加OK", true);
-      setStatus("追加OK", true);
-      $("amountInput").value = "";
-      $("memo1Input").value = "";
-      $("memo2Input").value = "";
-      await refreshAll(); // サマリと内訳を更新
-      return;
-    }
-
-    setPill("追加NG", false);
-    setStatus("追加NG", false);
-    setDetail(json.error ? String(json.error) : "GAS応答を確認");
-  }
-
-  async function undoLast(){
-    setPill("取り消し中…");
-    const json = await apiPost({
-      op: "undo",
-      access_token: accessToken
-    });
-    setDebug({ undo: json });
-
-    if (json.ok){
-      setPill("取り消しOK", true);
-      setStatus("取り消しOK", true);
-      await refreshAll();
-      return;
-    }
-    setPill("取り消しNG", false);
-    setStatus("取り消しNG", false);
-    setDetail(json.msg ? String(json.msg) : (json.error ? String(json.error) : "GAS応答を確認"));
-  }
-
-  // ===== refresh =====
-  async function refreshAll(){
-    await loadSummary();
-    await loadBreakdown(true);
-  }
-
-  // ===== profile =====
-  async function closeLiff(){
-    try{
+  // ===== close =====
+  function closeLiff() {
+    try {
       if (liff.isInClient()) liff.closeWindow();
-      else{
-        setPill("LINE内のみ閉じられます", false);
-        setStatus("LINEアプリ内で開いている時だけ「閉じる」が効きます", false);
-      }
-    }catch(e){
-      setDebug({ close_failed: String(e) });
+      else setStatus("LINEアプリ内で開いている時だけ「閉じる」が効きます", false);
+    } catch (e) {
+      setOutput({ error: "close_failed", detail: String(e) });
     }
   }
 
-  // ===== debug copy =====
-  async function copyDebug(){
-    const info = {
+  // ===== デバッグ情報 =====
+  function buildDebugInfo(extra={}) {
+    const ctx = safe(() => liff.getContext(), null);
+    return {
+      time: new Date().toISOString(),
+      location: safe(() => window.location.href, null),
+      userAgent: safe(() => navigator.userAgent, null),
       gasUrl: $("gasUrl").value.trim(),
       liffId: $("liffId").value.trim(),
-      month: getSelectedMonth(),
-      isInClient: (typeof liff !== "undefined" && liff.isInClient) ? liff.isInClient() : null,
-      isLoggedIn: (typeof liff !== "undefined" && liff.isLoggedIn) ? liff.isLoggedIn() : null,
+      isInClient: safe(() => liff.isInClient(), null),
+      isLoggedIn: safe(() => liff.isLoggedIn(), null),
+      context: ctx,
       hasIdToken: !!idToken,
       hasAccessToken: !!accessToken,
-      displayName: profile ? profile.displayName : null,
-      whoamiUserId: userId
+      profileName: profile ? profile.displayName : null,
+      ...extra
     };
-    try{
-      await navigator.clipboard.writeText(JSON.stringify(info, null, 2));
-      setPill("デバッグコピーOK", true);
-      setStatus("デバッグ情報をコピーしました", true);
-      setDetail("");
-    }catch(e){
-      setPill("コピー失敗", false);
-      setStatus("コピーできませんでした", false);
-      setDetail("ブラウザ制限の可能性。デバッグ欄を手でコピーしてOK。");
-      setDebug(info);
-    }
   }
 
-  function escapeHtml(s){
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
+  async function copyDebug() {
+    const info = buildDebugInfo();
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(info, null, 2));
+      setStatus("デバッグ情報をコピーしました", true);
+      setDetail(info.context && info.context.userId ? `context.userId: ${info.context.userId}` : "");
+      setOutput(info);
+    } catch (e) {
+      setStatus("コピーできませんでした（ブラウザ制限の可能性）", false);
+      setDetail("");
+      setOutput(info);
+    }
   }
 
   window.addEventListener("load", init);
