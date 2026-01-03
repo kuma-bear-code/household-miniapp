@@ -48,11 +48,13 @@
 
   <div class="card">
     <div class="row">
-      <button class="primary" id="btnWhoami" onclick="whoami()" disabled>whoami（本人確認）</button>
-      <button id="btnProfile" onclick="showProfile()" disabled>プロフィール表示</button>
-      <button id="btnClose" onclick="closeLiff()" disabled>閉じる</button>
-      <button onclick="copyDebug()">デバッグ情報コピー</button>
-    </div>
+  <button class="primary" id="btnWhoami" onclick="whoami()" disabled>whoami（本人確認）</button>
+  <button id="btnSummary" onclick="loadSummary()" disabled>今月サマリ</button>
+  <button id="btnProfile" onclick="showProfile()" disabled>プロフィール表示</button>
+  <button id="btnClose" onclick="closeLiff()" disabled>閉じる</button>
+  <button onclick="copyDebug()">デバッグ情報コピー</button>
+</div>
+
     <div class="muted" style="margin-top:8px;">
       「whoami」で userId(sub) が返ればOK。実久さんも同じ手順で userId を取って許可リストに追加できます。
     </div>
@@ -89,6 +91,7 @@
 
   function enableButtons(enabled) {
     $("btnWhoami").disabled = !enabled;
+    $("btnSummary").disabled = !enabled; // ←追加
     $("btnProfile").disabled = !enabled;
     $("btnClose").disabled = !enabled;
   }
@@ -165,13 +168,28 @@
 
   // ===== 家計簿ダッシュボード =====
   async function loadSummary() {
+  if (!accessToken) {
+    setStatus("access_token がありません（初期化未完了）", false);
+    return;
+  }
+
   const gasUrl = $("gasUrl").value.trim();
   const url =
     `${gasUrl}?action=api&op=summary&access_token=${encodeURIComponent(accessToken)}`;
 
+  setStatus("summary 実行中…");
   const json = await fetchJson(url);
   setOutput(json);
+
+  if (json.ok) {
+    setStatus("summary OK", true);
+    setDetail(`month: ${json.month || ""} / overall: ${json.overall?.toLocaleString?.() ?? json.overall}`);
+  } else {
+    setStatus("summary NG", false);
+    setDetail(JSON.stringify(json));
+  }
 }
+
 
   
   // ===== プロフィール表示 =====
