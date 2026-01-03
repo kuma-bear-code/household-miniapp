@@ -59,7 +59,7 @@
   function setStatus(msg){ document.getElementById("status").textContent = msg; }
 
   async function init(){
-    await liff.init({ liffId: "YOUR_LIFF_ID" });
+    await liff.init({ liffId: "2008812269-var864Dv" });
     if (!liff.isLoggedIn()) liff.login();
     idToken = liff.getIDToken();
     const prof = await liff.getProfile();
