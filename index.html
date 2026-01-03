@@ -137,41 +137,28 @@
 
   // ===== whoami =====
   async function whoami() {
-    if (!idToken) {
-      setStatus("idToken がありません（初期化未完了）", false);
-      return;
-    }
-
-    const gasUrl = $("gasUrl").value.trim();
-
-    // ✅ 正しい叩き方：action=api & op=whoami & id_token=...
-    const url =
-      `${gasUrl}?action=api&op=whoami&id_token=${encodeURIComponent(idToken)}`;
-
-    setStatus("whoami 実行中…");
-    setDetail("GASへ問い合わせています…");
-
-    try {
-      const json = await fetchJson(url);
-      setOutput(json);
-
-      const uid = (json && (json.userId || json.sub)) ? (json.userId || json.sub) : null;
-
-      if (json && json.ok === true && uid) {
-        setStatus("whoami OK（userId取得）", true);
-        setDetail(`userId(sub): ${uid}`);
-      } else {
-        setStatus("whoami NG（GAS側の応答を確認）", false);
-        setDetail(
-          "GASの応答に userId(sub) がありません。GAS URL / action=api / op=whoami / id_token を確認してください。"
-        );
-      }
-    } catch (err) {
-      setStatus("whoami エラー", false);
-      setDetail(String(err && err.message ? err.message : err));
-      setOutput({ error: "whoami_failed", detail: String(err) });
-    }
+  if (!accessToken) {
+    setStatus("access_token がありません（初期化未完了）", false);
+    return;
   }
+
+  const gasUrl = $("gasUrl").value.trim();
+  const url =
+    `${gasUrl}?action=api&op=whoami&access_token=${encodeURIComponent(accessToken)}`;
+
+  setStatus("whoami 実行中…");
+
+  const json = await fetchJson(url);
+  setOutput(json);
+
+  if (json.ok && json.userId) {
+    setStatus("whoami OK（userId取得）", true);
+    setDetail(`userId: ${json.userId}`);
+  } else {
+    setStatus("whoami NG", false);
+    setDetail(JSON.stringify(json));
+  }
+}
 
   // ===== プロフィール表示 =====
   async function showProfile() {
