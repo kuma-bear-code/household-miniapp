@@ -2,394 +2,450 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>家計簿 MiniApp</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>家計簿</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 16px; }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .card { border:1px solid #e5e5e5; border-radius:12px; padding:12px; margin:12px 0; }
-    label { font-size:12px; color:#666; display:block; margin-bottom:6px; }
-    input, select, button, textarea {
-      font-size:14px; padding:10px; border:1px solid #ddd; border-radius:10px;
+    :root{
+      --bg:#0b0c10; --card:#12141a; --muted:#9aa3b2; --text:#eef2ff;
+      --line:#232735; --accent:#4f7cff;
     }
-    button { background:#111; color:#fff; border:none; cursor:pointer; }
-    button.secondary { background:#444; }
-    button.ghost { background:#fff; color:#111; border:1px solid #ddd; }
-    .status { font-size:13px; color:#333; background:#f7f7f7; padding:10px; border-radius:10px; }
-    .ok { color: #0a7a2f; }
-    .ng { color: #b00020; }
-    table { border-collapse:collapse; width:100%; }
-    th, td { border-bottom:1px solid #eee; padding:8px; font-size:13px; text-align:left; }
-    th { color:#666; font-weight:600; }
-    .right { text-align:right; }
-    img { max-width:100%; border-radius:12px; border:1px solid #eee; }
-    .small { font-size:12px; color:#666; }
+    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); }
+    header{ padding:16px 16px 10px; position:sticky; top:0; background:linear-gradient(180deg, rgba(11,12,16,.98), rgba(11,12,16,.85)); backdrop-filter: blur(10px); border-bottom:1px solid var(--line); }
+    h1{ margin:0; font-size:18px; letter-spacing:.02em; }
+    .sub{ margin-top:6px; font-size:12px; color:var(--muted); }
+    .wrap{ padding:14px 14px 40px; max-width:860px; margin:0 auto; }
+    .tabs{ display:flex; gap:8px; margin:10px 0 14px; }
+    .tab{ flex:1; background:transparent; border:1px solid var(--line); color:var(--text); padding:10px 8px; border-radius:12px; font-weight:600; }
+    .tab.active{ background:var(--card); border-color:#2c3350; }
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin:12px 0; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+    select,input,textarea{ width:100%; box-sizing:border-box; background:#0f1117; border:1px solid #2a2f40; color:var(--text); border-radius:12px; padding:10px 12px; font-size:14px; outline:none; }
+    textarea{ min-height:70px; }
+    .btn{ background:var(--accent); border:none; color:white; padding:11px 14px; border-radius:12px; font-weight:700; }
+    .btn.sub{ background:transparent; border:1px solid var(--line); color:var(--text); }
+    .btn:disabled{ opacity:.5; }
+    .hint{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5; }
+    table{ width:100%; border-collapse:collapse; font-size:13px; }
+    th,td{ border-bottom:1px solid var(--line); padding:10px 6px; text-align:left; vertical-align:top; }
+    th{ color:var(--muted); font-weight:700; font-size:12px; }
+    td.num{ text-align:right; white-space:nowrap; }
+    .kpi{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+    .kpi b{ font-size:22px; }
+    .kpi span{ color:var(--muted); font-size:12px; }
+    .msg{ white-space:pre-wrap; font-size:12px; color:#cbd5ff; margin-top:10px; padding:10px; border:1px dashed #2a2f40; border-radius:12px; background:#0f1117; }
+    img{ width:100%; border-radius:14px; border:1px solid var(--line); background:#0f1117; }
   </style>
 </head>
 <body>
-  <h2>家計簿 MiniApp</h2>
+<header>
+  <h1>家計簿</h1>
+  <div class="sub" id="who">initializing…</div>
+</header>
 
-  <div class="card">
-    <div class="status" id="status">起動中…</div>
-    <div class="small" id="who"></div>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="add">追加</button>
+    <button class="tab" data-tab="summary">合計</button>
+    <button class="tab" data-tab="breakdown">内訳</button>
+    <button class="tab" data-tab="chart">グラフ</button>
   </div>
 
-  <div class="card">
-    <h3>追加</h3>
-    <div class="row">
-      <div style="flex:1; min-width:220px;">
-        <label>月（YYYYMM）空なら今月</label>
-        <input id="inpMonth" placeholder="例: 202601" />
+  <!-- 追加 -->
+  <section id="tab-add">
+    <div class="card">
+      <div class="row">
+        <div style="flex:1; min-width:220px;">
+          <label>月（YYYYMM）</label>
+          <input id="monthAdd" placeholder="例: 202601" />
+          <div class="hint">空欄なら当月。</div>
+        </div>
+        <div style="flex:2; min-width:260px;">
+          <label>項目</label>
+          <select id="itemSel"></select>
+        </div>
       </div>
-      <div style="flex:1; min-width:220px;">
-        <label>項目</label>
-        <select id="selItem"></select>
-      </div>
-    </div>
 
-    <div class="row">
-      <div style="flex:1; min-width:220px;">
-        <label>金額</label>
-        <input id="inpAmount" inputmode="numeric" placeholder="例: 1200" />
+      <div class="row">
+        <div style="flex:1; min-width:180px;">
+          <label>金額</label>
+          <input id="amount" inputmode="numeric" placeholder="例: 1200" />
+        </div>
+        <div style="flex:1; min-width:180px;">
+          <label>備考1</label>
+          <select id="memo1Sel"></select>
+        </div>
       </div>
-      <div style="flex:1; min-width:220px;">
-        <label>備考1（ドロップダウン）</label>
-        <select id="selMemo1"></select>
-      </div>
-    </div>
 
-    <div class="row">
-      <div style="flex:1; min-width:220px;">
-        <label>備考2（自由）</label>
-        <input id="inpMemo2" placeholder="例: スーパー / ランチ など" />
+      <div class="row">
+        <div style="flex:1; min-width:280px;">
+          <label>備考2</label>
+          <input id="memo2" placeholder="任意" />
+        </div>
       </div>
-    </div>
 
-    <div class="row" style="margin-top:10px;">
-      <button id="btnAdd">追加</button>
-      <button class="secondary" id="btnUndo">直前取り消し</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>合計（summary）</h3>
-    <div class="row">
-      <div style="flex:1; min-width:220px;">
-        <label>月（YYYYMM）</label>
-        <input id="inpSumMonth" placeholder="例: 202601" />
+      <div class="row" style="margin-top:8px;">
+        <button class="btn" id="btnAdd">追加</button>
+        <button class="btn sub" id="btnUndo">直前取り消し</button>
       </div>
-      <button id="btnSummary">表示</button>
-    </div>
-    <div id="sumOut" style="margin-top:10px;"></div>
-  </div>
 
-  <div class="card">
-    <h3>内訳（breakdown）</h3>
-    <div class="row">
-      <div style="flex:1; min-width:220px;">
-        <label>月（YYYYMM）</label>
-        <input id="inpBrMonth" placeholder="例: 202601" />
-      </div>
-      <button id="btnBreakdown">表示</button>
-      <button class="ghost" id="btnMore" style="display:none;">もっと見る</button>
+      <div class="msg" id="msgAdd" style="display:none;"></div>
     </div>
-    <div id="brOut" style="margin-top:10px;"></div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h3>グラフ（全体残額）</h3>
-    <div class="row">
-      <div style="flex:1; min-width:220px;">
-        <label>月（YYYYMM）</label>
-        <input id="inpChartMonth" placeholder="例: 202601" />
+  <!-- 合計 -->
+  <section id="tab-summary" style="display:none;">
+    <div class="card">
+      <div class="row">
+        <div style="flex:1; min-width:220px;">
+          <label>月（YYYYMM）</label>
+          <input id="monthSum" placeholder="例: 202601" />
+          <div class="hint">空欄なら当月。</div>
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:10px;">
+          <button class="btn" id="btnSum">取得</button>
+        </div>
       </div>
-      <button id="btnChart">更新</button>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="kpi"><span>全体の残額</span><b id="overall">-</b></div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <table>
+          <thead>
+            <tr><th>項目</th><th class="num">予算</th><th class="num">支出</th><th class="num">残額</th></tr>
+          </thead>
+          <tbody id="sumBody"></tbody>
+        </table>
+      </div>
+
+      <div class="msg" id="msgSum" style="display:none;"></div>
     </div>
-    <div class="small" id="chartMsg" style="margin-top:8px;"></div>
-    <div id="chartImgWrap" style="margin-top:10px; display:none;">
-      <img id="chartImg" alt="chart" />
+  </section>
+
+  <!-- 内訳 -->
+  <section id="tab-breakdown" style="display:none;">
+    <div class="card">
+      <div class="row">
+        <div style="flex:1; min-width:220px;">
+          <label>月（YYYYMM）</label>
+          <input id="monthBd" placeholder="例: 202601" />
+        </div>
+        <div style="flex:1; min-width:120px;">
+          <label>開始</label>
+          <input id="startBd" inputmode="numeric" value="0" />
+        </div>
+        <div style="flex:1; min-width:120px;">
+          <label>件数</label>
+          <input id="limitBd" inputmode="numeric" value="50" />
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:10px;">
+          <button class="btn" id="btnBd">取得</button>
+          <button class="btn sub" id="btnBdMore">次へ</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <table>
+          <thead>
+            <tr><th>日付</th><th>項目</th><th class="num">金額</th><th>備考1</th><th>備考2</th></tr>
+          </thead>
+          <tbody id="bdBody"></tbody>
+        </table>
+        <div class="hint" id="bdInfo"></div>
+      </div>
+
+      <div class="msg" id="msgBd" style="display:none;"></div>
     </div>
-  </div>
+  </section>
+
+  <!-- グラフ -->
+  <section id="tab-chart" style="display:none;">
+    <div class="card">
+      <div class="row">
+        <div style="flex:1; min-width:220px;">
+          <label>月（YYYYMM）</label>
+          <input id="monthChart" placeholder="例: 202601" />
+          <div class="hint">空欄なら当月。</div>
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:10px;">
+          <button class="btn" id="btnChart">生成</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <img id="chartImg" alt="chart" />
+        <div class="hint" id="chartHint">※ base64表示（LIFFで確実）</div>
+      </div>
+
+      <div class="msg" id="msgChart" style="display:none;"></div>
+    </div>
+  </section>
+</div>
 
 <script>
-/*** ★★★ あなたが設定する2つ ★★★ ***/
-const LIFF_ID = "2008812269-var864Dv";
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // 末尾 /exec のURL
+  // ============================
+  // 設定：ここをあなたの値に変更
+  // ============================
+  const LIFF_ID = "2008812269-var864Dv";
+  const API_BASE = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // 末尾 /exec まで
 
-let accessToken = "";
-let userId = "";
-let breakdownStart = 0;
-const breakdownLimit = 50;
-
-// DOM helper
-const el = (id)=>document.getElementById(id);
-
-function setStatus(msg, ok=true){
-  const s = el("status");
-  s.textContent = msg;
-  s.className = "status " + (ok ? "ok" : "ng");
-}
-
-// yyyyMM（今月）
-function currentYm(){
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  return `${y}${m}`;
-}
-
-async function liffInit(){
-  setStatus("LIFF 初期化中…");
-  await liff.init({ liffId: LIFF_ID });
-
-  if (!liff.isLoggedIn()){
-    setStatus("ログイン中…");
-    liff.login();
-    return;
-  }
-
-  accessToken = liff.getAccessToken();
-  setStatus("ログイン完了。ユーザー確認中…");
-
-  const who = await apiGet("whoami");
-  userId = who.userId;
-  el("who").textContent = `userId: ${userId}`;
-
-  // items & memo1 options
-  const items = await apiGet("items");
-  fillSelect(el("selItem"), items.items);
-  fillSelect(el("selMemo1"), items.memo1Options || ["", "かずき","かずきカード","みく","みくカード"]);
-
-  // 初期値
-  el("inpSumMonth").value = currentYm();
-  el("inpBrMonth").value = currentYm();
-  el("inpChartMonth").value = currentYm();
-
-  setStatus("準備OK（追加・合計・内訳・グラフが使えます）");
-}
-
-function fillSelect(selectEl, arr){
-  selectEl.innerHTML = "";
-  arr.forEach(v=>{
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v === "" ? "（なし）" : v;
-    selectEl.appendChild(opt);
-  });
-}
-
-// GET API
-async function apiGet(op, params={}){
-  const url = new URL(WEBAPP_URL);
-  url.searchParams.set("action","api");
-  url.searchParams.set("op", op);
-
-  // chart_image_b64 は token不要（GAS側と合わせてる）
-  if (op !== "chart_image_b64"){
-    url.searchParams.set("access_token", accessToken);
-  }
-
-  Object.entries(params).forEach(([k,v])=>{
-    if (v !== undefined && v !== null && String(v).length) url.searchParams.set(k, String(v));
-  });
-
-  const res = await fetch(url.toString(), { method:"GET" });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || "API error");
-  return data;
-}
-
-// POST API（CORS回避：text/plain で送る）
-async function apiPost(body){
-  const url = new URL(WEBAPP_URL);
-  url.searchParams.set("action","api");
-
-  const res = await fetch(url.toString(), {
-    method: "POST",
-    // ★ application/json をやめる（プリフライト回避）
-    headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: JSON.stringify(body),
-  });
-
-  // GASが落ちた時にHTMLが返ることがあるので保険
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); }
-  catch(e){ throw new Error("JSON以外が返りました: " + text.slice(0,120)); }
-
-  if (!data.ok) throw new Error(data.error || "API error");
-  return data;
-}
-
-function parseAmountInput(v){
-  const t = String(v||"").trim().replace(/,/g,"");
-  if (!t || !/^-?\d+$/.test(t)) return NaN;
-  return Number(t);
-}
-
-async function onAdd(){
-  try{
-    setStatus("追加中…");
-    const month = (el("inpMonth").value || "").trim();
-    const item = el("selItem").value;
-    const amount = parseAmountInput(el("inpAmount").value);
-    const memo1 = el("selMemo1").value;
-    const memo2 = (el("inpMemo2").value || "").trim();
-
-    if (!item) throw new Error("項目を選んでください");
-    if (!Number.isFinite(amount)) throw new Error("金額が不正です");
-
-    const body = {
-      op: "add",
-      access_token: accessToken,
-      item, amount, memo1, memo2
-    };
-    if (month) body.month = month;
-
-    const r = await apiPost(body);
-    setStatus("✅ 追加しました");
-    // 入力欄リセット（好みで）
-    el("inpAmount").value = "";
-    el("inpMemo2").value = "";
-
-  }catch(e){
-    setStatus("❌ 追加失敗: " + e.message, false);
-  }
-}
-
-async function onUndo(){
-  try{
-    setStatus("取り消し中…");
-    const r = await apiPost({ op:"undo", access_token: accessToken });
-    if (r.ok){
-      setStatus("✅ " + r.msg);
-    }else{
-      setStatus("❌ " + (r.msg || "取り消し失敗"), false);
+  // timeout付きfetch
+  async function fetchWithTimeout(url, opts={}, timeoutMs=15000){
+    const ac = new AbortController();
+    const t = setTimeout(()=>ac.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, {...opts, signal: ac.signal});
+      return res;
+    } finally {
+      clearTimeout(t);
     }
-  }catch(e){
-    setStatus("❌ 取り消し失敗: " + e.message, false);
   }
-}
 
-function renderSummary(data){
-  const overall = Number(data.overall||0).toLocaleString();
-  const rows = data.rows || [];
-  let html = `<div><b>全体残額：</b>${overall}円</div>`;
-  html += `<table style="margin-top:8px;">
-    <thead><tr><th>項目</th><th class="right">予算</th><th class="right">支出</th><th class="right">残額</th></tr></thead><tbody>`;
-  rows.forEach(r=>{
-    html += `<tr>
-      <td>${escapeHtml(r.name)}</td>
-      <td class="right">${Number(r.budget||0).toLocaleString()}</td>
-      <td class="right">${Number(r.spend||0).toLocaleString()}</td>
-      <td class="right">${Number(r.remain||0).toLocaleString()}</td>
-    </tr>`;
+  async function readRes(res){
+    const ct = (res.headers.get("content-type")||"").toLowerCase();
+    const text = await res.text();
+    if (ct.includes("application/json")) {
+      try { return JSON.parse(text); } catch(e){ return { ok:false, error:"JSON parse failed", raw:text }; }
+    }
+    // GASがtext/htmlを返す事故対策
+    try { return JSON.parse(text); } catch(e){ return { ok:false, error:"Non-JSON response", raw:text }; }
+  }
+
+  function money(n){
+    const x = Number(n||0);
+    return x.toLocaleString();
+  }
+
+  function showMsg(id, obj){
+    const el = document.getElementById(id);
+    el.style.display = "block";
+    el.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+  }
+  function hideMsg(id){
+    const el = document.getElementById(id);
+    el.style.display = "none";
+    el.textContent = "";
+  }
+
+  function currentYYYYMM(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    return `${y}${m}`;
+  }
+
+  let accessToken = "";
+  let myUserId = "";
+
+  async function apiGet(op, params={}){
+    const qs = new URLSearchParams({
+      action:"api",
+      op,
+      access_token: accessToken,
+      ...params
+    });
+    const url = `${API_BASE}?${qs.toString()}`;
+    const res = await fetchWithTimeout(url, { method:"GET" });
+    const data = await readRes(res);
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  async function apiPost(body){
+    const url = `${API_BASE}?action=api`;
+    const res = await fetchWithTimeout(url, {
+      method:"POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await readRes(res);
+    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  async function init(){
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()){
+      liff.login();
+      return;
+    }
+    accessToken = liff.getAccessToken();
+
+    // whoami
+    try{
+      const me = await apiGet("whoami");
+      myUserId = me.userId;
+      document.getElementById("who").textContent = `user: ${myUserId}`;
+    }catch(e){
+      document.getElementById("who").textContent = `init error: ${e.message}`;
+    }
+
+    // items
+    try{
+      const r = await apiGet("items");
+      const itemSel = document.getElementById("itemSel");
+      itemSel.innerHTML = "";
+      r.items.forEach(x=>{
+        const opt = document.createElement("option");
+        opt.value = x; opt.textContent = x;
+        itemSel.appendChild(opt);
+      });
+
+      const memo1Sel = document.getElementById("memo1Sel");
+      memo1Sel.innerHTML = "";
+      r.memo1Options.forEach(x=>{
+        const opt = document.createElement("option");
+        opt.value = x; opt.textContent = x==="" ? "（なし）" : x;
+        memo1Sel.appendChild(opt);
+      });
+    }catch(e){
+      showMsg("msgAdd", `items error: ${e.message}`);
+    }
+
+    // default months
+    document.getElementById("monthAdd").value = "";
+    document.getElementById("monthSum").value = "";
+    document.getElementById("monthBd").value = "";
+    document.getElementById("monthChart").value = "";
+  }
+
+  // tabs
+  document.querySelectorAll(".tab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      btn.classList.add("active");
+      const t = btn.dataset.tab;
+      ["add","summary","breakdown","chart"].forEach(k=>{
+        document.getElementById(`tab-${k}`).style.display = (k===t) ? "" : "none";
+      });
+    });
   });
-  html += `</tbody></table>`;
-  el("sumOut").innerHTML = html;
-}
 
-function renderBreakdown(data){
-  const rows = data.rows || [];
-  let html = `<div class="small">表示：${data.start+1}〜${Math.min(data.start+rows.length, data.total)} / ${data.total}</div>`;
-  html += `<table style="margin-top:8px;">
-    <thead><tr><th>日付</th><th>項目</th><th class="right">金額</th><th>備考1</th><th>備考2</th></tr></thead><tbody>`;
-  rows.forEach(r=>{
-    html += `<tr>
-      <td>${escapeHtml(r.date)}</td>
-      <td>${escapeHtml(r.item)}</td>
-      <td class="right">${Number(r.amount||0).toLocaleString()}</td>
-      <td>${escapeHtml(r.memo1||"")}</td>
-      <td>${escapeHtml(r.memo2||"")}</td>
-    </tr>`;
+  // add
+  document.getElementById("btnAdd").addEventListener("click", async ()=>{
+    hideMsg("msgAdd");
+    const item  = document.getElementById("itemSel").value;
+    const amount= Number(document.getElementById("amount").value);
+    const memo1 = document.getElementById("memo1Sel").value;
+    const memo2 = document.getElementById("memo2").value || "";
+    const month = (document.getElementById("monthAdd").value || "").trim();
+
+    try{
+      const r = await apiPost({
+        op:"add",
+        access_token: accessToken,
+        item, amount,
+        memo1, memo2,
+        month: month || null
+      });
+      showMsg("msgAdd", r);
+      // 追加後は合計/内訳を更新しやすく
+    }catch(e){
+      showMsg("msgAdd", `add failed: ${e.message}`);
+    }
   });
-  html += `</tbody></table>`;
-  el("brOut").innerHTML = html;
 
-  // more
-  if (data.hasMore){
-    el("btnMore").style.display = "";
-  } else {
-    el("btnMore").style.display = "none";
+  // undo
+  document.getElementById("btnUndo").addEventListener("click", async ()=>{
+    hideMsg("msgAdd");
+    try{
+      const r = await apiPost({ op:"undo", access_token: accessToken });
+      showMsg("msgAdd", r);
+    }catch(e){
+      showMsg("msgAdd", `undo failed: ${e.message}`);
+    }
+  });
+
+  // summary
+  document.getElementById("btnSum").addEventListener("click", async ()=>{
+    hideMsg("msgSum");
+    const month = (document.getElementById("monthSum").value || "").trim() || currentYYYYMM();
+    try{
+      const r = await apiGet("summary", { month });
+      document.getElementById("overall").textContent = money(r.overall) + "円";
+
+      const body = document.getElementById("sumBody");
+      body.innerHTML = "";
+      r.rows.forEach(row=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.name}</td>
+          <td class="num">${money(row.budget)}円</td>
+          <td class="num">${money(row.spend)}円</td>
+          <td class="num">${money(row.remain)}円</td>
+        `;
+        body.appendChild(tr);
+      });
+    }catch(e){
+      showMsg("msgSum", `summary failed: ${e.message}`);
+    }
+  });
+
+  // breakdown
+  async function loadBreakdown(){
+    hideMsg("msgBd");
+    const month = (document.getElementById("monthBd").value || "").trim() || currentYYYYMM();
+    const start = Number(document.getElementById("startBd").value || 0);
+    const limit = Number(document.getElementById("limitBd").value || 50);
+
+    try{
+      const r = await apiGet("breakdown", { month, start, limit });
+      const body = document.getElementById("bdBody");
+      body.innerHTML = "";
+      r.rows.forEach(row=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.date}</td>
+          <td>${row.item}</td>
+          <td class="num">${money(row.amount)}円</td>
+          <td>${row.memo1 || ""}</td>
+          <td>${row.memo2 || ""}</td>
+        `;
+        body.appendChild(tr);
+      });
+      document.getElementById("bdInfo").textContent =
+        `表示: ${r.start+1}–${r.start + r.rows.length} / ${r.total}` + (r.hasMore ? `  nextStart=${r.nextStart}` : "");
+      // 次へボタン用
+      document.getElementById("btnBdMore").disabled = !r.hasMore;
+      document.getElementById("btnBdMore").dataset.nextStart = r.nextStart;
+    }catch(e){
+      showMsg("msgBd", `breakdown failed: ${e.message}`);
+    }
   }
-}
+  document.getElementById("btnBd").addEventListener("click", loadBreakdown);
+  document.getElementById("btnBdMore").addEventListener("click", ()=>{
+    const ns = Number(document.getElementById("btnBdMore").dataset.nextStart || 0);
+    document.getElementById("startBd").value = String(ns);
+    loadBreakdown();
+  });
 
-async function onSummary(){
-  try{
-    setStatus("合計を取得中…");
-    const month = (el("inpSumMonth").value || "").trim() || currentYm();
-    const r = await apiGet("summary", { month });
-    renderSummary(r);
-    setStatus("✅ 合計を表示しました");
-  }catch(e){
-    setStatus("❌ 合計取得失敗: " + e.message, false);
-  }
-}
+  // chart (base64)
+  document.getElementById("btnChart").addEventListener("click", async ()=>{
+    hideMsg("msgChart");
+    const month = (document.getElementById("monthChart").value || "").trim() || currentYYYYMM();
+    try{
+      // 1) generate chart -> fileId
+      const r1 = await apiGet("chart_overall", { month });
+      // 2) fileId -> base64
+      const qs = new URLSearchParams({ action:"api", op:"chart_image_b64", fileId: r1.fileId });
+      const url = `${API_BASE}?${qs.toString()}`;
+      const res = await fetchWithTimeout(url, { method:"GET" });
+      const r2 = await readRes(res);
+      if (!res.ok || !r2.ok) throw new Error(r2.error || `HTTP ${res.status}`);
 
-async function onBreakdown(reset=true){
-  try{
-    setStatus("内訳を取得中…");
-    const month = (el("inpBrMonth").value || "").trim() || currentYm();
-    if (reset) breakdownStart = 0;
+      const mime = r2.mimeType || "image/jpeg";
+      document.getElementById("chartImg").src = `data:${mime};base64,${r2.b64}`;
+    }catch(e){
+      showMsg("msgChart", `chart failed: ${e.message}`);
+    }
+  });
 
-    const r = await apiGet("breakdown", { month, start: breakdownStart, limit: breakdownLimit });
-    renderBreakdown(r);
-
-    breakdownStart = r.nextStart || (breakdownStart + breakdownLimit);
-    setStatus("✅ 内訳を表示しました");
-  }catch(e){
-    setStatus("❌ 内訳取得失敗: " + e.message, false);
-  }
-}
-
-async function loadChart(){
-  try{
-    const month = (el("inpChartMonth").value || "").trim() || currentYm();
-    el("chartMsg").textContent = "グラフ生成中…";
-    el("chartImgWrap").style.display = "none";
-
-    // 1) グラフ生成（Driveに保存してfileIdを返す）
-    const r = await apiGet("chart_overall", { month });
-
-    // 2) fileId → base64
-    el("chartMsg").textContent = "画像を取得中…";
-    const b = await apiGet("chart_image_b64", { fileId: r.fileId });
-
-    // 3) data URI表示
-    const img = el("chartImg");
-    img.onload = ()=>{
-      el("chartImgWrap").style.display = "";
-      el("chartMsg").textContent = "✅ グラフを更新しました";
-    };
-    img.onerror = ()=>{
-      el("chartMsg").textContent = "❌ 画像は読み込めませんでした";
-    };
-    img.src = "data:image/jpeg;base64," + b.b64;
-
-  }catch(e){
-    el("chartMsg").textContent = "❌ グラフ更新失敗: " + e.message;
-  }
-}
-
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g, (c)=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
-}
-
-// events
-el("btnAdd").addEventListener("click", onAdd);
-el("btnUndo").addEventListener("click", onUndo);
-el("btnSummary").addEventListener("click", onSummary);
-el("btnBreakdown").addEventListener("click", ()=>onBreakdown(true));
-el("btnMore").addEventListener("click", ()=>onBreakdown(false));
-el("btnChart").addEventListener("click", loadChart);
-
-// start
-liffInit().catch(e=>{
-  setStatus("❌ 起動失敗: " + e.message, false);
-});
+  init().catch(err=>{
+    document.getElementById("who").textContent = `init fatal: ${err.message}`;
+  });
 </script>
 </body>
 </html>
