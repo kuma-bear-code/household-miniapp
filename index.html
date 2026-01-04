@@ -8,13 +8,9 @@
   <style>
     :root{
       --bg:#0b0c10; --card:#12141a; --muted:#9aa3b2; --text:#eef2ff;
-      --line:#232735; --accent:#4f7cff; --danger:#ff5a7a; --ok:#3ddc97;
+      --line:#232735; --accent:#4f7cff;
     }
-    body{
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
-      background:var(--bg); color:var(--text);
-    }
+    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); }
     header{
       padding:16px 16px 10px; position:sticky; top:0;
       background:linear-gradient(180deg, rgba(11,12,16,.98), rgba(11,12,16,.85));
@@ -30,87 +26,35 @@
       color:var(--text); white-space:nowrap;
     }
     .pill.ok{ border-color:#2c3350; }
-    .pill.good{ border-color:rgba(61,220,151,.35); }
-    .pill.bad{ border-color:rgba(255,90,122,.35); }
     .pill.muted{ color:var(--muted); }
-
-    .wrap{ padding:14px 14px 60px; max-width:860px; margin:0 auto; }
+    .wrap{ padding:14px 14px 40px; max-width:860px; margin:0 auto; }
     .tabs{ display:flex; gap:8px; margin:10px 0 14px; }
-    .tab{
-      flex:1; background:transparent; border:1px solid var(--line); color:var(--text);
-      padding:10px 8px; border-radius:12px; font-weight:700;
-    }
+    .tab{ flex:1; background:transparent; border:1px solid var(--line); color:var(--text); padding:10px 8px; border-radius:12px; font-weight:600; }
     .tab.active{ background:var(--card); border-color:#2c3350; }
     .card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin:12px 0; }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
     label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
-    select,input,textarea{
-      width:100%; box-sizing:border-box;
-      background:#0f1117; border:1px solid #2a2f40; color:var(--text);
-      border-radius:12px; padding:10px 12px; font-size:14px; outline:none;
-    }
+    select,input,textarea{ width:100%; box-sizing:border-box; background:#0f1117; border:1px solid #2a2f40; color:var(--text); border-radius:12px; padding:10px 12px; font-size:14px; outline:none; }
     textarea{ min-height:70px; }
-
-    .btn{
-      background:var(--accent); border:none; color:white;
-      padding:11px 14px; border-radius:12px; font-weight:800;
-      cursor:pointer;
-    }
+    .btn{ background:var(--accent); border:none; color:white; padding:11px 14px; border-radius:12px; font-weight:700; }
     .btn.sub{ background:transparent; border:1px solid var(--line); color:var(--text); }
-    .btn.danger{ background:transparent; border:1px solid rgba(255,90,122,.5); color:#ff90a7; }
-    .btn:disabled{ opacity:.45; cursor:not-allowed; }
-
+    .btn:disabled{ opacity:.5; }
     .hint{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5; }
     table{ width:100%; border-collapse:collapse; font-size:13px; }
     th,td{ border-bottom:1px solid var(--line); padding:10px 6px; text-align:left; vertical-align:top; }
-    th{ color:var(--muted); font-weight:800; font-size:12px; }
+    th{ color:var(--muted); font-weight:700; font-size:12px; }
     td.num{ text-align:right; white-space:nowrap; }
     .kpi{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
     .kpi b{ font-size:22px; }
     .kpi span{ color:var(--muted); font-size:12px; }
-
-    .msg{
-      white-space:pre-wrap; font-size:12px; color:#cbd5ff;
-      margin-top:10px; padding:10px; border:1px dashed #2a2f40;
-      border-radius:12px; background:#0f1117;
-    }
+    .msg{ white-space:pre-wrap; font-size:12px; color:#cbd5ff; margin-top:10px; padding:10px; border:1px dashed #2a2f40; border-radius:12px; background:#0f1117; }
 
     /* chart list */
-    .chartToolbar{
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-      margin-top:10px;
-    }
-    .chartToolbar .left{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .tiny{
-      font-size:12px; color:var(--muted);
-      border:1px solid var(--line); border-radius:999px; padding:6px 10px;
-      background:rgba(18,20,26,.55);
-    }
-    .progressBar{
-      width:100%; height:10px; border-radius:999px;
-      border:1px solid var(--line); background:#0f1117;
-      overflow:hidden;
-    }
-    .progressBar > div{
-      height:100%; width:0%;
-      background:linear-gradient(90deg, rgba(79,124,255,.2), rgba(79,124,255,.8));
-      transition:width .2s ease;
-    }
-
     .chartList{ display:flex; flex-direction:column; gap:12px; }
-    .chartItemTitle{ font-size:13px; font-weight:900; color:#dbe4ff; margin-bottom:8px; }
+    .chartItemTitle{ font-size:13px; font-weight:700; color:#dbe4ff; margin-bottom:8px; }
     .chartImg{
-      width:100%; border-radius:14px; border:1px solid var(--line);
-      background:#0f1117; cursor:pointer;
-    }
-    .chartSkeleton{
-      border-radius:14px; border:1px solid var(--line);
-      height:220px; background:linear-gradient(90deg, rgba(255,255,255,.03), rgba(255,255,255,.08), rgba(255,255,255,.03));
-      animation: shimmer 1.2s infinite linear;
-    }
-    @keyframes shimmer{
-      0%{ background-position: 0 0; }
-      100%{ background-position: 600px 0; }
+      width:100%; border-radius:14px; border:1px solid var(--line); background:#0f1117;
+      cursor:pointer;
     }
 
     /* modal */
@@ -125,16 +69,14 @@
       border-radius:16px; padding:10px;
     }
     .modalTop{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
-    .modalTop .title{ font-weight:900; font-size:14px; color:#eef2ff; }
+    .modalTop .title{ font-weight:800; font-size:14px; color:#eef2ff; }
     .modalTop button{
       background:transparent; border:1px solid var(--line); color:var(--text);
-      padding:6px 10px; border-radius:10px; font-weight:800;
-      cursor:pointer;
+      padding:6px 10px; border-radius:10px; font-weight:700;
     }
     .modalImg{ width:100%; border-radius:12px; border:1px solid var(--line); background:#0b0c10; }
   </style>
 </head>
-
 <body>
 <header>
   <div class="headrow">
@@ -277,24 +219,10 @@
         </div>
         <div style="display:flex; align-items:flex-end; gap:10px;">
           <button class="btn" id="btnChartList">一覧表示</button>
-          <button class="btn sub" id="btnChartStop" disabled>停止</button>
-          <button class="btn sub" id="btnChartRetry" disabled>再試行</button>
         </div>
       </div>
 
-      <div class="hint" id="chartHint">
-        ※ 安定版：一覧は fileId だけ取得 → 画像は1枚ずつ base64 化して表示（Spreadsheet切断対策）
-      </div>
-
-      <div class="chartToolbar">
-        <div class="left">
-          <span class="tiny" id="chartStatus">未取得</span>
-          <span class="tiny" id="chartCount">0 / 0</span>
-        </div>
-      </div>
-      <div class="progressBar" style="margin-top:10px;">
-        <div id="chartProg"></div>
-      </div>
+      <div class="hint" id="chartHint">※ base64は重いので分割取得して順次表示します</div>
 
       <div class="card" style="margin-top:12px;">
         <div id="chartList" class="chartList"></div>
@@ -321,17 +249,15 @@
   // 設定：ここをあなたの値に変更
   // ============================
   const LIFF_ID = "2008812269-var864Dv";
-  const API_BASE = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // /exec まで
+  const API_BASE = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
 
   // ===== 状態表示 =====
-  function setState(text, tone="muted"){
+  function setState(text){
     const el = document.getElementById("statePill");
     el.textContent = text;
-    el.classList.remove("muted","good","bad","ok");
-    el.classList.add(tone === "good" ? "good" : tone === "bad" ? "bad" : "muted");
   }
 
-  // timeout付きfetch
+  // timeout付きfetch（デフォルト60秒）
   async function fetchWithTimeout(url, opts={}, timeoutMs=60000){
     const ac = new AbortController();
     const t = setTimeout(()=>ac.abort(), timeoutMs);
@@ -396,16 +322,13 @@
     const url = `${API_BASE}?action=api`;
     const res = await fetchWithTimeout(url, {
       method:"POST",
-      // preflight回避
-      headers: { "Content-Type":"text/plain;charset=UTF-8" },
+      headers: { "Content-Type":"text/plain;charset=UTF-8" }, // preflight回避
       body: JSON.stringify(body)
     }, timeoutMs);
     const data = await readRes(res);
     if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   }
-
-  function sleep(ms){ return new Promise(res=>setTimeout(res, ms)); }
 
   async function init(){
     setState("初期化中…");
@@ -455,7 +378,7 @@
     document.getElementById("monthBd").value = "";
     document.getElementById("monthChart").value = "";
 
-    setState("待機", "good");
+    setState("待機");
   }
 
   // tabs
@@ -467,7 +390,7 @@
       ["add","summary","breakdown","chart"].forEach(k=>{
         document.getElementById(`tab-${k}`).style.display = (k===t) ? "" : "none";
       });
-      setState("待機", "good");
+      setState("待機");
     });
   });
 
@@ -490,10 +413,10 @@
         month: month || null
       }, 30000);
       showMsg("msgAdd", r);
-      setState("完了", "good");
+      setState("完了");
     }catch(e){
       showMsg("msgAdd", `add failed: ${e.message}`);
-      setState("エラー", "bad");
+      setState("エラー");
     }
   });
 
@@ -504,10 +427,10 @@
     try{
       const r = await apiPost({ op:"undo", access_token: accessToken }, 30000);
       showMsg("msgAdd", r);
-      setState("完了", "good");
+      setState("完了");
     }catch(e){
       showMsg("msgAdd", `undo failed: ${e.message}`);
-      setState("エラー", "bad");
+      setState("エラー");
     }
   });
 
@@ -532,10 +455,10 @@
         `;
         body.appendChild(tr);
       });
-      setState("完了", "good");
+      setState("完了");
     }catch(e){
       showMsg("msgSum", `summary failed: ${e.message}`);
-      setState("エラー", "bad");
+      setState("エラー");
     }
   });
 
@@ -566,10 +489,10 @@
         `表示: ${r.start+1}–${r.start + r.rows.length} / ${r.total}` + (r.hasMore ? `  nextStart=${r.nextStart}` : "");
       document.getElementById("btnBdMore").disabled = !r.hasMore;
       document.getElementById("btnBdMore").dataset.nextStart = r.nextStart;
-      setState("完了", "good");
+      setState("完了");
     }catch(e){
       showMsg("msgBd", `breakdown failed: ${e.message}`);
-      setState("エラー", "bad");
+      setState("エラー");
     }
   }
   document.getElementById("btnBd").addEventListener("click", loadBreakdown);
@@ -585,263 +508,84 @@
   const modalTitle = document.getElementById("modalTitle");
   document.getElementById("modalClose").addEventListener("click", ()=>modal.classList.remove("show"));
   modal.addEventListener("click", (e)=>{ if (e.target === modal) modal.classList.remove("show"); });
+
   function openModal(title, src){
     modalTitle.textContent = title || "画像";
     modalImg.src = src;
     modal.classList.add("show");
   }
 
-  // ============================
-  // グラフ（安定版）
-  // ============================
-  const listEl = document.getElementById("chartList");
-  const statusEl = document.getElementById("chartStatus");
-  const countEl  = document.getElementById("chartCount");
-  const progEl   = document.getElementById("chartProg");
-  const btnStop  = document.getElementById("btnChartStop");
-  const btnRetry = document.getElementById("btnChartRetry");
-
-  let chartRun = { running:false, stop:false, month:"", queue:[], done:0, total:0, failed:[] };
-
-  function setChartUi_(text, tone="muted"){
-    statusEl.textContent = text;
-    statusEl.style.borderColor =
-      tone === "good" ? "rgba(61,220,151,.35)" :
-      tone === "bad"  ? "rgba(255,90,122,.35)" :
-      "var(--line)";
-  }
-  function setChartProgress_(done, total){
-    countEl.textContent = `${done} / ${total}`;
-    const pct = total ? Math.floor((done/total)*100) : 0;
-    progEl.style.width = `${pct}%`;
-  }
-  function clearChartList_(){
-    listEl.innerHTML = "";
-    setChartUi_("未取得");
-    setChartProgress_(0,0);
-    hideMsg("msgChart");
-  }
-
-  async function fetchChartImageDataUrl_(fileId){
-    const qs = new URLSearchParams({ action:"api", op:"chart_image_b64", fileId });
-    const url = `${API_BASE}?${qs.toString()}`;
-    // 画像はタイムアウト短め（長いとAbort連鎖しやすい）
-    const res = await fetchWithTimeout(url, { method:"GET" }, 30000);
-    const data = await readRes(res);
-    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    const mime = data.mimeType || "image/jpeg";
-    return `data:${mime};base64,${data.b64}`;
-  }
-
-  function addChartCard_(title){
+  // ★チャートカード追加
+  function appendChartCard(listEl, title, mimeType, b64){
+    const src = `data:${mimeType||"image/jpeg"};base64,${b64}`;
     const box = document.createElement("div");
     box.className = "card";
-    const t = document.createElement("div");
-    t.className = "chartItemTitle";
-    t.textContent = title;
-    const sk = document.createElement("div");
-    sk.className = "chartSkeleton";
-    box.appendChild(t);
-    box.appendChild(sk);
+    box.innerHTML = `<div class="chartItemTitle">${title}</div>`;
+    const img = document.createElement("img");
+    img.className = "chartImg";
+    img.alt = title;
+    img.src = src;
+    img.addEventListener("click", ()=>openModal(title, src));
+    box.appendChild(img);
     listEl.appendChild(box);
-    return { box, title, sk };
   }
 
-  async function loadChartListFilesAll_(month){
-    // fileId一覧を全部集める（5枚ずつ生成・取得）
-    const queue = [];
-    let start = 0;
-    const limit = 5;
-
-    while(true){
-      if (chartRun.stop) break;
-      const r = await apiGet("chart_list_files", { month, start, limit }, 60000);
-
-      // 1回目のみ overall を先頭に入れる
-      if (start === 0 && r.overallFileId){
-        queue.push({ title:"全体残額", fileId:r.overallFileId });
-      }
-
-      (r.items || []).forEach(it=>{
-        if (it.fileId){
-          queue.push({ title: it.title || "項目", fileId: it.fileId });
-        } else {
-          // fileId空（年シートのチャート不足など）
-          queue.push({ title: (it.title || "項目") + "（チャートなし）", fileId: "" });
-        }
-      });
-
-      if (!r.hasMore) break;
-      start = Number(r.nextStart || 0);
-      // Spreadsheet負荷軽減
-      await sleep(250);
-    }
-    return queue;
-  }
-
-  async function renderChartsSequential_(queue){
-    // 表示の骨組みを先に作る
-    const cards = queue.map(q => addChartCard_(q.title));
-
-    chartRun.total = queue.length;
-    chartRun.done = 0;
-    chartRun.failed = [];
-
-    setChartProgress_(0, chartRun.total);
-
-    for (let i=0;i<queue.length;i++){
-      if (chartRun.stop) break;
-      const q = queue[i];
-      const c = cards[i];
-
-      if (!q.fileId){
-        // チャートが無い
-        c.sk.className = "msg";
-        c.sk.textContent = "この項目はチャートが見つかりません（年シート側のチャート不足の可能性）";
-        chartRun.done++;
-        setChartProgress_(chartRun.done, chartRun.total);
-        continue;
-      }
-
-      try{
-        const src = await fetchChartImageDataUrl_(q.fileId);
-
-        const img = document.createElement("img");
-        img.className = "chartImg";
-        img.alt = q.title;
-        img.src = src;
-        img.addEventListener("click", ()=>openModal(q.title, src));
-
-        c.box.replaceChild(img, c.sk);
-
-        chartRun.done++;
-        setChartProgress_(chartRun.done, chartRun.total);
-
-        // 連続取得の負荷軽減（Abort/Spreadsheet切断対策）
-        await sleep(180);
-
-      }catch(e){
-        chartRun.failed.push({ title:q.title, fileId:q.fileId, error:e.message });
-        c.sk.className = "msg";
-        c.sk.style.color = "#ffb3c1";
-        c.sk.textContent = "読み込み失敗: " + e.message;
-
-        chartRun.done++;
-        setChartProgress_(chartRun.done, chartRun.total);
-
-        // エラー時は少し長めに待つ
-        await sleep(350);
-      }
-    }
-  }
-
-  function updateChartButtons_(){
-    btnStop.disabled = !chartRun.running;
-    btnRetry.disabled = chartRun.running || (chartRun.failed.length === 0);
-  }
-
-  async function runCharts_(month){
-    clearChartList_();
+  // chart list (base64) - ★分割取得
+  document.getElementById("btnChartList").addEventListener("click", async ()=>{
     hideMsg("msgChart");
+    const listEl = document.getElementById("chartList");
+    listEl.innerHTML = "";
 
-    chartRun.running = true;
-    chartRun.stop = false;
-    chartRun.month = month;
-    chartRun.queue = [];
-    chartRun.failed = [];
-    updateChartButtons_();
-
-    setState("グラフ取得中…");
-    setChartUi_("一覧取得中…");
+    const month = (document.getElementById("monthChart").value || "").trim() || currentYYYYMM();
 
     try{
-      // ① fileId一覧（＋必要分の生成）を全回収
-      const queue = await loadChartListFilesAll_(month);
-      chartRun.queue = queue;
+      setState("グラフ取得中(1/?)…");
 
-      setChartUi_("画像ロード中…");
-      setChartProgress_(0, queue.length);
+      let start = 0;
+      const limit = 5; // 1回5枚（重さ対策）
+      let page = 1;
 
-      // ② 1枚ずつ base64→表示
-      await renderChartsSequential_(queue);
+      while(true){
+        setState(`グラフ取得中(${page}/?)…`);
+        // 1回あたり最大60秒
+        const r = await apiGet("chart_list_b64", { month, start, limit }, 60000);
 
-      chartRun.running = false;
-      updateChartButtons_();
+        // overall（最初のページだけ）
+        if (r.overall && r.overall.b64){
+          appendChartCard(listEl, r.overall.title || "全体残額", r.overall.mimeType, r.overall.b64);
+        }
 
-      if (chartRun.stop){
-        setChartUi_("停止しました", "bad");
-        setState("停止", "bad");
-      } else if (chartRun.failed.length){
-        setChartUi_("一部失敗（再試行できます）", "bad");
-        setState("一部失敗", "bad");
-        showMsg("msgChart", "失敗一覧:\n" + chartRun.failed.map(x=>`- ${x.title}: ${x.error}`).join("\n"));
-      } else {
-        setChartUi_("完了", "good");
-        setState("完了", "good");
+        // items
+        (r.items||[]).forEach(it=>{
+          if (it && it.b64){
+            appendChartCard(listEl, it.title, it.mimeType, it.b64);
+          } else if (it && it.title){
+            // チャート無し等はテキスト表示
+            const box = document.createElement("div");
+            box.className = "card";
+            box.innerHTML = `<div class="chartItemTitle">${it.title}</div><div class="hint">取得失敗: ${it.error || "unknown"}</div>`;
+            listEl.appendChild(box);
+          }
+        });
+
+        if (!r.hasMore) break;
+        start = r.nextStart;
+        page++;
+
+        // 連打でサービス落ち対策：少し待つ
+        await new Promise(res=>setTimeout(res, 150));
       }
 
+      setState("完了");
     }catch(e){
-      chartRun.running = false;
-      updateChartButtons_();
-      setChartUi_("エラー", "bad");
-      setState("エラー", "bad");
-      showMsg("msgChart", `chart failed: ${e.message}`);
-    }
-  }
-
-  // グラフ：一覧表示
-  document.getElementById("btnChartList").addEventListener("click", async ()=>{
-    const month = (document.getElementById("monthChart").value || "").trim() || currentYYYYMM();
-    await runCharts_(month);
-  });
-
-  // 停止
-  btnStop.addEventListener("click", ()=>{
-    chartRun.stop = true;
-    setChartUi_("停止要求…", "bad");
-    setState("停止要求…", "bad");
-  });
-
-  // 再試行（失敗分だけ再ロード）
-  btnRetry.addEventListener("click", async ()=>{
-    if (chartRun.running) return;
-    if (!chartRun.failed.length) return;
-
-    hideMsg("msgChart");
-    chartRun.running = true;
-    chartRun.stop = false;
-    updateChartButtons_();
-
-    setState("再試行中…");
-    setChartUi_("失敗分を再試行中…");
-
-    // 失敗分だけキューを作って末尾に追加表示（分かりやすく）
-    const retryQueue = chartRun.failed.map(x=>({ title:x.title + "（再試行）", fileId:x.fileId }));
-    chartRun.failed = [];
-
-    // そのまま追加レンダ（シーケンシャル）
-    await renderChartsSequential_(retryQueue);
-
-    chartRun.running = false;
-    updateChartButtons_();
-
-    if (chartRun.stop){
-      setChartUi_("停止しました", "bad");
-      setState("停止", "bad");
-    } else if (chartRun.failed.length){
-      setChartUi_("まだ一部失敗（再試行可）", "bad");
-      setState("一部失敗", "bad");
-      showMsg("msgChart", "失敗一覧:\n" + chartRun.failed.map(x=>`- ${x.title}: ${x.error}`).join("\n"));
-    } else {
-      setChartUi_("再試行 完了", "good");
-      setState("完了", "good");
+      showMsg("msgChart", `chart list failed: ${e.message}`);
+      setState("エラー");
     }
   });
 
-  // 起動
   init().catch(err=>{
     document.getElementById("who").textContent = `init fatal: ${err.message}`;
-    setState("エラー", "bad");
+    setState("エラー");
   });
 </script>
 </body>
