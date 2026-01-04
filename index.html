@@ -9,17 +9,33 @@
     :root{
       --bg:#0b0c10; --card:#12141a; --muted:#9aa3b2; --text:#eef2ff;
       --line:#232735; --accent:#4f7cff;
+      --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
     }
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); }
     header{
-      padding:16px 16px 10px; position:sticky; top:0;
+      padding:14px 16px 10px;
+      position:sticky; top:0;
       background:linear-gradient(180deg, rgba(11,12,16,.98), rgba(11,12,16,.85));
       backdrop-filter: blur(10px);
       border-bottom:1px solid var(--line);
       z-index:10;
     }
+    .headTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
     h1{ margin:0; font-size:18px; letter-spacing:.02em; }
-    .sub{ margin-top:6px; font-size:12px; color:var(--muted); }
+    .headRight{ display:flex; align-items:center; gap:10px; }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 10px; border-radius:999px;
+      border:1px solid var(--line);
+      background:#0f1117;
+      font-size:12px; color:var(--text);
+      white-space:nowrap;
+    }
+    .dot{ width:8px; height:8px; border-radius:999px; background:var(--muted); }
+    .dot.ok{ background:var(--ok); }
+    .dot.warn{ background:var(--warn); }
+    .dot.bad{ background:var(--bad); }
+    .sub{ margin-top:8px; font-size:12px; color:var(--muted); }
     .wrap{ padding:14px 14px 40px; max-width:860px; margin:0 auto; }
     .tabs{ display:flex; gap:8px; margin:10px 0 14px; }
     .tab{ flex:1; background:transparent; border:1px solid var(--line); color:var(--text); padding:10px 8px; border-radius:12px; font-weight:600; }
@@ -42,85 +58,55 @@
     .kpi span{ color:var(--muted); font-size:12px; }
     .msg{ white-space:pre-wrap; font-size:12px; color:#cbd5ff; margin-top:10px; padding:10px; border:1px dashed #2a2f40; border-radius:12px; background:#0f1117; }
 
-    img{ width:100%; border-radius:14px; border:1px solid var(--line); background:#0f1117; }
-
-    /* ✅ ヘッダー右側：ログイン済み＋動作表示 */
-    .headrow{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-    .headright{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-    .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(18,20,26,.55);
-      color:var(--text);
-      font-size:12px;
-      font-weight:700;
-      user-select:none;
+    /* chart list */
+    .chartTitle{ font-size:13px; color:var(--muted); margin:0 0 8px; display:flex; justify-content:space-between; gap:10px; }
+    .chartTitle b{ color:var(--text); font-weight:800; }
+    .chartImg{
+      width:100%; border-radius:14px; border:1px solid var(--line); background:#0f1117;
+      cursor:pointer;
     }
-    .dot{ width:8px; height:8px; border-radius:50%; background:#3ddc97; box-shadow:0 0 0 2px rgba(61,220,151,.15); }
-    .dot.off{ background:#ff6b6b; box-shadow:0 0 0 2px rgba(255,107,107,.15); }
-    .status{ font-size:12px; color:var(--muted); }
 
-    /* ✅ グラフ一覧 */
-    .chartList{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
-    .chartItem{ background:#0f1117; border:1px solid #2a2f40; border-radius:14px; overflow:hidden; }
-    .chartHead{
-      padding:10px 12px;
-      border-bottom:1px solid #2a2f40;
-      display:flex; justify-content:space-between; gap:10px; align-items:center;
-      font-size:13px; font-weight:800;
-    }
-    .chartHead span{ color:var(--muted); font-size:12px; font-weight:700; }
-    .chartBody{ padding:10px; }
-    .chartBody img{ cursor:pointer; }
-
-    /* ✅ 最大化モーダル */
+    /* modal */
     .modal{
-      position:fixed; inset:0; z-index:100;
-      display:none;
-      background:rgba(0,0,0,.65);
-      backdrop-filter: blur(6px);
-      padding:14px;
-      box-sizing:border-box;
+      position:fixed; inset:0; background:rgba(0,0,0,.75);
+      display:none; align-items:center; justify-content:center;
+      padding:18px; z-index:999;
     }
-    .modal.on{ display:block; }
-    .modalInner{ width:100%; height:100%; display:flex; flex-direction:column; gap:10px; }
-    .modalTop{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .modalTop b{ font-size:14px; }
-    .closeBtn{
-      appearance:none; border:1px solid var(--line);
-      background:rgba(18,20,26,.7); color:var(--text);
-      border-radius:999px; padding:8px 12px; font-weight:800;
+    .modal.open{ display:flex; }
+    .modalInner{
+      width:min(980px, 100%);
+      background:#0f1117;
+      border:1px solid #2a2f40;
+      border-radius:16px;
+      padding:10px;
     }
-    .modalBox{
-      flex:1;
-      display:flex; align-items:center; justify-content:center;
-      border:1px solid var(--line); border-radius:16px;
-      background:rgba(18,20,26,.6);
-      overflow:hidden;
+    .modalTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 8px 10px; }
+    .modalTop b{ font-size:13px; }
+    .modalClose{
+      background:transparent; border:1px solid var(--line); color:var(--text);
+      border-radius:10px; padding:6px 10px; font-weight:700;
     }
-    .modalBox img{
-      width:auto; height:auto; max-width:100%; max-height:100%;
-      border:none; border-radius:0; background:transparent;
+    .modalImg{
+      width:100%; border-radius:12px; border:1px solid var(--line);
+      background:#0b0c10;
     }
   </style>
 </head>
 <body>
 <header>
-  <div class="headrow">
-    <div>
-      <h1>家計簿</h1>
-      <div class="sub" id="who">initializing…</div>
-    </div>
-    <div class="headright">
-      <div class="pill" id="loginPill">
-        <span class="dot off" id="loginDot"></span>
-        <span id="loginText">未ログイン</span>
+  <div class="headTop">
+    <h1>家計簿</h1>
+    <div class="headRight">
+      <div class="chip" id="statusChip" title="現在の動作">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">initializing…</span>
       </div>
-      <div class="status" id="statusText">待機中</div>
+      <button class="chip" id="btnLoginState" type="button" title="ログイン状態">
+        ログイン済み
+      </button>
     </div>
   </div>
+  <div class="sub" id="who">initializing…</div>
 </header>
 
 <div class="wrap">
@@ -240,7 +226,7 @@
     </div>
   </section>
 
-  <!-- グラフ（✅ 一覧 + 最大化） -->
+  <!-- グラフ -->
   <section id="tab-chart" style="display:none;">
     <div class="card">
       <div class="row">
@@ -250,31 +236,29 @@
           <div class="hint">空欄なら当月。</div>
         </div>
         <div style="display:flex; align-items:flex-end; gap:10px;">
-          <button class="btn" id="btnChart">表示</button>
+          <button class="btn" id="btnChart">更新</button>
         </div>
       </div>
 
-      <div class="hint" id="chartHint" style="margin-top:10px;">
-        ※ 上から「残額」→「その他項目」。画像タップで最大化。
+      <div class="hint" style="margin-top:10px;">
+        上：全体残額　／　下：項目別（スクロール）
       </div>
 
-      <div class="chartList" id="chartList"></div>
+      <div id="chartList"></div>
 
       <div class="msg" id="msgChart" style="display:none;"></div>
     </div>
   </section>
 </div>
 
-<!-- ✅ モーダル -->
-<div class="modal" id="imgModal" aria-hidden="true">
+<!-- modal -->
+<div class="modal" id="imgModal" role="dialog" aria-modal="true">
   <div class="modalInner">
     <div class="modalTop">
-      <b id="modalTitle">グラフ</b>
-      <button class="closeBtn" id="modalClose">閉じる</button>
+      <b id="modalTitle">画像</b>
+      <button class="modalClose" id="modalClose" type="button">閉じる</button>
     </div>
-    <div class="modalBox">
-      <img id="modalImg" alt="expanded chart" />
-    </div>
+    <img id="modalImg" class="modalImg" alt="preview" />
   </div>
 </div>
 
@@ -284,6 +268,14 @@
   // ============================
   const LIFF_ID = "2008812269-var864Dv";
   const API_BASE = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // 末尾 /exec まで
+
+  // status UI
+  function setStatus(text, level=""){
+    const t = document.getElementById("statusText");
+    const d = document.getElementById("statusDot");
+    t.textContent = text;
+    d.className = "dot" + (level ? (" " + level) : "");
+  }
 
   // timeout付きfetch
   async function fetchWithTimeout(url, opts={}, timeoutMs=15000){
@@ -329,22 +321,6 @@
     return `${y}${m}`;
   }
 
-  // ✅ UIステータス
-  function setStatus(text){
-    document.getElementById("statusText").textContent = text || "待機中";
-  }
-  function setLogin(isOn){
-    const dot = document.getElementById("loginDot");
-    const txt = document.getElementById("loginText");
-    if (isOn){
-      dot.classList.remove("off");
-      txt.textContent = "ログイン済み";
-    } else {
-      dot.classList.add("off");
-      txt.textContent = "未ログイン";
-    }
-  }
-
   let accessToken = "";
   let myUserId = "";
 
@@ -375,76 +351,52 @@
     return data;
   }
 
-  // ✅ 最大化モーダル
-  function openModal(title, url){
-    document.getElementById("modalTitle").textContent = title || "グラフ";
-    document.getElementById("modalImg").src = url;
-    const m = document.getElementById("imgModal");
-    m.classList.add("on");
-    m.setAttribute("aria-hidden", "false");
+  // modal
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("modalImg");
+  const modalTitle = document.getElementById("modalTitle");
+  function openModal(title, src){
+    modalTitle.textContent = title || "画像";
+    modalImg.src = src;
+    modal.classList.add("open");
   }
   function closeModal(){
-    const m = document.getElementById("imgModal");
-    m.classList.remove("on");
-    m.setAttribute("aria-hidden", "true");
-    document.getElementById("modalImg").src = "";
+    modal.classList.remove("open");
+    modalImg.src = "";
   }
   document.getElementById("modalClose").addEventListener("click", closeModal);
-  document.getElementById("imgModal").addEventListener("click", (e)=>{
-    if (e.target && e.target.id === "imgModal") closeModal();
+  modal.addEventListener("click", (e)=>{
+    if (e.target === modal) closeModal();
   });
 
-  // ✅ 遅延読み込み（大量画像でも軽く）
-  function setupLazyImages(){
-    const imgs = document.querySelectorAll("img[data-src]");
-    if (!imgs.length) return;
-
-    const io = new IntersectionObserver((entries)=>{
-      entries.forEach(ent=>{
-        if (ent.isIntersecting){
-          const img = ent.target;
-          const src = img.getAttribute("data-src");
-          if (src){
-            img.src = src;
-            img.removeAttribute("data-src");
-          }
-          io.unobserve(img);
-        }
-      });
-    }, { root:null, rootMargin:"200px 0px", threshold:0.01 });
-
-    imgs.forEach(img=>io.observe(img));
-  }
-
   async function init(){
-    setStatus("初期化中…");
+    setStatus("initializing…");
     await liff.init({ liffId: LIFF_ID });
 
     if (!liff.isLoggedIn()){
-      setLogin(false);
-      setStatus("ログイン中…");
+      setStatus("login required", "warn");
       liff.login();
       return;
     }
-    setLogin(true);
 
     accessToken = liff.getAccessToken();
+    setStatus("logged in", "ok");
 
     // whoami
     try{
-      setStatus("認証確認中…");
+      setStatus("whoami…");
       const me = await apiGet("whoami");
       myUserId = me.userId;
       document.getElementById("who").textContent = `user: ${myUserId}`;
-      setStatus("待機中");
+      setStatus("ready", "ok");
     }catch(e){
       document.getElementById("who").textContent = `init error: ${e.message}`;
-      setStatus("初期化エラー");
+      setStatus("init error", "bad");
     }
 
     // items
     try{
-      setStatus("項目読込中…");
+      setStatus("loading items…");
       const r = await apiGet("items");
       const itemSel = document.getElementById("itemSel");
       itemSel.innerHTML = "";
@@ -461,10 +413,10 @@
         opt.value = x; opt.textContent = x==="" ? "（なし）" : x;
         memo1Sel.appendChild(opt);
       });
-      setStatus("待機中");
+      setStatus("ready", "ok");
     }catch(e){
       showMsg("msgAdd", `items error: ${e.message}`);
-      setStatus("待機中");
+      setStatus("items error", "bad");
     }
 
     // default months
@@ -474,7 +426,13 @@
     document.getElementById("monthChart").value = "";
   }
 
-  // tabs（位置はそのまま）
+  // ログイン済みボタン（今は表示用：将来ログアウト等へ）
+  document.getElementById("btnLoginState").addEventListener("click", async ()=>{
+    // 必要ならここで liff.logout() → liff.login() などにできる
+    // 今は誤操作防止で何もしない
+  });
+
+  // tabs
   document.querySelectorAll(".tab").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -484,13 +442,9 @@
         document.getElementById(`tab-${k}`).style.display = (k===t) ? "" : "none";
       });
 
-      // ✅ グラフに入ったら一度だけ自動表示（不要なら削ってOK）
-      if (t === "chart"){
-        const list = document.getElementById("chartList");
-        if (!list.dataset.loadedOnce){
-          list.dataset.loadedOnce = "1";
-          await loadCharts();
-        }
+      // グラフタブに入ったら自動で一覧更新（UX）
+      if (t === "chart") {
+        await loadChartList();
       }
     });
   });
@@ -498,23 +452,16 @@
   // add
   document.getElementById("btnAdd").addEventListener("click", async ()=>{
     hideMsg("msgAdd");
+    setStatus("入力中…", "warn");
+
     const item  = document.getElementById("itemSel").value;
-    const amountRaw = document.getElementById("amount").value;
-    const amount= Number(amountRaw);
+    const amount= Number(document.getElementById("amount").value);
     const memo1 = document.getElementById("memo1Sel").value;
     const memo2 = document.getElementById("memo2").value || "";
     const month = (document.getElementById("monthAdd").value || "").trim();
 
-    if (!Number.isFinite(amount) || String(amountRaw).trim()===""){
-      showMsg("msgAdd", "金額を数値で入力してください。");
-      return;
-    }
-
     try{
-      setStatus("追加中…");
-      document.getElementById("btnAdd").disabled = true;
-      document.getElementById("btnUndo").disabled = true;
-
+      setStatus("送信中…", "warn");
       const r = await apiPost({
         op:"add",
         access_token: accessToken,
@@ -523,13 +470,10 @@
         month: month || null
       });
       showMsg("msgAdd", r);
-      setStatus("待機中");
+      setStatus("完了", "ok");
     }catch(e){
       showMsg("msgAdd", `add failed: ${e.message}`);
-      setStatus("追加失敗");
-    } finally {
-      document.getElementById("btnAdd").disabled = false;
-      document.getElementById("btnUndo").disabled = false;
+      setStatus("add error", "bad");
     }
   });
 
@@ -537,19 +481,13 @@
   document.getElementById("btnUndo").addEventListener("click", async ()=>{
     hideMsg("msgAdd");
     try{
-      setStatus("取り消し中…");
-      document.getElementById("btnAdd").disabled = true;
-      document.getElementById("btnUndo").disabled = true;
-
+      setStatus("取り消し中…", "warn");
       const r = await apiPost({ op:"undo", access_token: accessToken });
       showMsg("msgAdd", r);
-      setStatus("待機中");
+      setStatus("完了", "ok");
     }catch(e){
       showMsg("msgAdd", `undo failed: ${e.message}`);
-      setStatus("取り消し失敗");
-    } finally {
-      document.getElementById("btnAdd").disabled = false;
-      document.getElementById("btnUndo").disabled = false;
+      setStatus("undo error", "bad");
     }
   });
 
@@ -558,9 +496,7 @@
     hideMsg("msgSum");
     const month = (document.getElementById("monthSum").value || "").trim() || currentYYYYMM();
     try{
-      setStatus("合計取得中…");
-      document.getElementById("btnSum").disabled = true;
-
+      setStatus("取得中…", "warn");
       const r = await apiGet("summary", { month });
       document.getElementById("overall").textContent = money(r.overall) + "円";
 
@@ -576,12 +512,10 @@
         `;
         body.appendChild(tr);
       });
-      setStatus("待機中");
+      setStatus("完了", "ok");
     }catch(e){
       showMsg("msgSum", `summary failed: ${e.message}`);
-      setStatus("合計失敗");
-    } finally {
-      document.getElementById("btnSum").disabled = false;
+      setStatus("summary error", "bad");
     }
   });
 
@@ -593,10 +527,7 @@
     const limit = Number(document.getElementById("limitBd").value || 50);
 
     try{
-      setStatus("内訳取得中…");
-      document.getElementById("btnBd").disabled = true;
-      document.getElementById("btnBdMore").disabled = true;
-
+      setStatus("取得中…", "warn");
       const r = await apiGet("breakdown", { month, start, limit });
       const body = document.getElementById("bdBody");
       body.innerHTML = "";
@@ -616,12 +547,10 @@
 
       document.getElementById("btnBdMore").disabled = !r.hasMore;
       document.getElementById("btnBdMore").dataset.nextStart = r.nextStart;
-      setStatus("待機中");
+      setStatus("完了", "ok");
     }catch(e){
       showMsg("msgBd", `breakdown failed: ${e.message}`);
-      setStatus("内訳失敗");
-    } finally {
-      document.getElementById("btnBd").disabled = false;
+      setStatus("breakdown error", "bad");
     }
   }
   document.getElementById("btnBd").addEventListener("click", loadBreakdown);
@@ -631,74 +560,74 @@
     loadBreakdown();
   });
 
-  // ✅ chart（一覧表示）
-  async function loadCharts(){
+  // ✅ chart list: overall + items (urls)
+  async function loadChartList(){
     hideMsg("msgChart");
     const month = (document.getElementById("monthChart").value || "").trim() || currentYYYYMM();
 
-    try{
-      setStatus("グラフ取得中…");
-      document.getElementById("btnChart").disabled = true;
+    const list = document.getElementById("chartList");
+    list.innerHTML = "";
 
-      // ✅ GAS側の op=chart_urls を使う（全体→項目一覧）
+    try{
+      setStatus("グラフ更新中…", "warn");
       const r = await apiGet("chart_urls", { month });
 
-      const list = document.getElementById("chartList");
-      list.innerHTML = "";
-
-      function addChart(title, url, badge){
-        const item = document.createElement("div");
-        item.className = "chartItem";
-
-        const head = document.createElement("div");
-        head.className = "chartHead";
-        head.innerHTML = `<div>${title}</div><span>${badge||""}</span>`;
-
-        const body = document.createElement("div");
-        body.className = "chartBody";
-
-        const img = document.createElement("img");
-        img.alt = title;
-        img.loading = "lazy";
-        // 遅延読み込み
-        img.setAttribute("data-src", url);
-
-        img.addEventListener("click", ()=> openModal(title, url));
-
-        body.appendChild(img);
-        item.appendChild(head);
-        item.appendChild(body);
-        list.appendChild(item);
-      }
-
-      // 1) 残額（最上段）
+      // overall first
       if (r.overall && r.overall.url){
-        addChart(r.overall.title || "全体の残額", r.overall.url, month);
+        list.appendChild(buildChartCard(r.overall.title || "全体残額", r.overall.url));
       }
 
-      // 2) その他項目（順に）
-      const items = Array.isArray(r.items) ? r.items : [];
-      items.forEach(it=>{
+      // items
+      (r.items || []).forEach(it=>{
         if (!it || !it.url) return;
-        addChart(it.title || "項目", it.url, "");
+        list.appendChild(buildChartCard(it.title || "項目", it.url));
       });
 
-      setupLazyImages();
-      setStatus("待機中");
+      setStatus("完了", "ok");
     }catch(e){
-      showMsg("msgChart", `chart failed: ${e.message}`);
-      setStatus("グラフ失敗");
-    } finally {
-      document.getElementById("btnChart").disabled = false;
+      showMsg("msgChart", `chart list failed: ${e.message}`);
+      setStatus("chart error", "bad");
     }
   }
 
-  document.getElementById("btnChart").addEventListener("click", loadCharts);
+  function buildChartCard(title, url){
+    const wrap = document.createElement("div");
+    wrap.className = "card";
+    wrap.style.marginTop = "12px";
+
+    const head = document.createElement("div");
+    head.className = "chartTitle";
+    head.innerHTML = `<b>${escapeHtml(title)}</b><span>タップで拡大</span>`;
+
+    const img = document.createElement("img");
+    img.className = "chartImg";
+    img.alt = title;
+    img.loading = "lazy";
+    img.src = url;
+
+    img.addEventListener("click", ()=>{
+      openModal(title, url);
+    });
+
+    wrap.appendChild(head);
+    wrap.appendChild(img);
+    return wrap;
+  }
+
+  function escapeHtml(s){
+    return String(s||"")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+  }
+
+  document.getElementById("btnChart").addEventListener("click", loadChartList);
 
   init().catch(err=>{
     document.getElementById("who").textContent = `init fatal: ${err.message}`;
-    setStatus("初期化失敗");
-    setLogin(false);
+    setStatus("fatal", "bad");
   });
 </script>
 </body>
