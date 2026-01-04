@@ -255,16 +255,17 @@
   }
 
   async function apiPost(body){
-    const url = `${API_BASE}?action=api`;
-    const res = await fetchWithTimeout(url, {
-      method:"POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify(body)
-    });
-    const data = await readRes(res);
-    if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    return data;
-  }
+  const url = `${API_BASE}?action=api`;
+  const res = await fetchWithTimeout(url, {
+    method:"POST",
+    // ★ここが重要：application/json をやめる（preflight回避）
+    headers: { "Content-Type":"text/plain;charset=UTF-8" },
+    body: JSON.stringify(body)
+  });
+  const data = await readRes(res);
+  if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
 
   async function init(){
     await liff.init({ liffId: LIFF_ID });
