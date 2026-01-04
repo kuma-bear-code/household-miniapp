@@ -4,273 +4,377 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>家計簿 MiniApp</title>
-
-  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <style>
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; margin: 16px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    label { font-size: 12px; color: #444; display:block; margin-bottom: 4px; }
-    input, select, textarea, button { font-size: 16px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
-    input, select, textarea { width: 100%; box-sizing: border-box; }
-    button { cursor: pointer; border: 1px solid #333; background: #111; color: #fff; }
-    button.secondary { background: #fff; color: #111; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .w50 { flex: 1 1 160px; }
-    .status { font-size: 13px; color: #333; white-space: pre-wrap; }
-    img { width: 100%; border-radius: 12px; border: 1px solid #eee; }
-    .muted { color:#777; font-size: 12px; }
-    .small { font-size: 12px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .card { border:1px solid #e5e5e5; border-radius:12px; padding:12px; margin:12px 0; }
+    label { font-size:12px; color:#666; display:block; margin-bottom:6px; }
+    input, select, button, textarea { font-size:14px; padding:10px; border:1px solid #ddd; border-radius:10px; }
+    button { background:#111; color:#fff; border:none; cursor:pointer; }
+    button.secondary { background:#444; }
+    button.ghost { background:#fff; color:#111; border:1px solid #ddd; }
+    .status { font-size:13px; color:#333; background:#f7f7f7; padding:10px; border-radius:10px; }
+    .ok { color: #0a7a2f; }
+    .ng { color: #b00020; }
+    table { border-collapse:collapse; width:100%; }
+    th, td { border-bottom:1px solid #eee; padding:8px; font-size:13px; text-align:left; }
+    th { color:#666; font-weight:600; }
+    .right { text-align:right; }
+    img { max-width:100%; border-radius:12px; border:1px solid #eee; }
+    .small { font-size:12px; color:#666; }
   </style>
 </head>
-
 <body>
-  <!-- 設定（埋め込み済み） -->
+  <h2>家計簿 MiniApp</h2>
+
   <div class="card">
-    <div class="row">
-      <div class="w50">
-        <label>WebApp URL（固定）</label>
-        <input id="apiUrl" readonly />
-        <div class="muted small mono" id="apiUrlHint"></div>
-      </div>
-      <div class="w50">
-        <label>LIFF ID（固定）</label>
-        <input id="liffId" readonly />
-        <div class="muted small mono" id="liffHint"></div>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:10px;">
-      <div class="w50">
-        <label>対象年月（yyyymm）</label>
-        <input id="yyyymm" placeholder="202601" />
-        <div class="muted">例：202601（yyyymm内訳 / 月シート 202601 を参照）</div>
-      </div>
-
-      <div class="w50">
-        <label>ログイン状態</label>
-        <input id="liffState" readonly />
-        <div class="muted" id="profileHint"></div>
-      </div>
-    </div>
+    <div class="status" id="status">起動中…</div>
+    <div class="small" id="who"></div>
   </div>
 
-  <!-- 入力 -->
   <div class="card">
+    <h3>追加</h3>
     <div class="row">
-      <div class="w50">
+      <div style="flex:1; min-width:220px;">
+        <label>月（YYYYMM）空なら今月</label>
+        <input id="inpMonth" placeholder="例: 202601" />
+      </div>
+      <div style="flex:1; min-width:220px;">
         <label>項目</label>
-        <input id="item" placeholder="食費" />
-      </div>
-      <div class="w50">
-        <label>金額</label>
-        <input id="amount" type="number" placeholder="1200" />
+        <select id="selItem"></select>
       </div>
     </div>
 
     <div class="row">
-      <div class="w50">
-        <label>備考1</label>
-        <input id="note1" placeholder="スーパー" />
+      <div style="flex:1; min-width:220px;">
+        <label>金額</label>
+        <input id="inpAmount" inputmode="numeric" placeholder="例: 1200" />
       </div>
-      <div class="w50">
-        <label>備考2</label>
-        <input id="note2" placeholder="メモ" />
+      <div style="flex:1; min-width:220px;">
+        <label>備考1（ドロップダウン）</label>
+        <select id="selMemo1"></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div style="flex:1; min-width:220px;">
+        <label>備考2（自由）</label>
+        <input id="inpMemo2" placeholder="例: スーパー / ランチ など" />
       </div>
     </div>
 
     <div class="row" style="margin-top:10px;">
-      <button id="btnAdd" disabled>追加</button>
-      <button id="btnUndo" class="secondary" disabled>取消（直前txId）</button>
-      <button id="btnRefresh" class="secondary" disabled>更新（Summary/Chart）</button>
-    </div>
-
-    <div class="muted" style="margin-top:8px;">
-      取消は txId に紐づくUNDO行を <span class="mono">yyyymm内訳</span> に追記（監査・集計が安定）。
-      BOTが「行削除」方式ならGAS側undo_を合わせてください。
+      <button id="btnAdd">追加</button>
+      <button class="secondary" id="btnUndo">直前取り消し</button>
     </div>
   </div>
 
-  <!-- 状態 -->
   <div class="card">
+    <h3>合計（summary）</h3>
     <div class="row">
-      <div class="w50">
-        <label>Summary（E39）</label>
-        <input id="summary" readonly />
+      <div style="flex:1; min-width:220px;">
+        <label>月（YYYYMM）</label>
+        <input id="inpSumMonth" placeholder="例: 202601" />
       </div>
-      <div class="w50">
-        <label>直前 txId</label>
-        <input id="lastTxId" readonly />
-      </div>
+      <button id="btnSummary">表示</button>
     </div>
-    <div class="status" id="status"></div>
+    <div id="sumOut" style="margin-top:10px;"></div>
   </div>
 
-  <!-- グラフ -->
   <div class="card">
-    <label>残額グラフ（1枚取得API）</label>
-    <img id="chart" alt="chart" />
-    <div class="muted" id="chartMeta"></div>
+    <h3>内訳（breakdown）</h3>
+    <div class="row">
+      <div style="flex:1; min-width:220px;">
+        <label>月（YYYYMM）</label>
+        <input id="inpBrMonth" placeholder="例: 202601" />
+      </div>
+      <button id="btnBreakdown">表示</button>
+      <button class="ghost" id="btnMore" style="display:none;">もっと見る</button>
+    </div>
+    <div id="brOut" style="margin-top:10px;"></div>
+  </div>
+
+  <div class="card">
+    <h3>グラフ（全体残額）</h3>
+    <div class="row">
+      <div style="flex:1; min-width:220px;">
+        <label>月（YYYYMM）</label>
+        <input id="inpChartMonth" placeholder="例: 202601" />
+      </div>
+      <button id="btnChart">更新</button>
+    </div>
+    <div class="small" id="chartMsg" style="margin-top:8px;"></div>
+    <div id="chartImgWrap" style="margin-top:10px; display:none;">
+      <img id="chartImg" alt="chart" />
+    </div>
   </div>
 
 <script>
-  // ===== 固定値：あなたが指定したものを埋め込み =====
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec";
-  const LIFF_ID    = "2008812269-var864Dv";
+/*** ★★★ 設定 ★★★ ***/
+const LIFF_ID = "2008812269-var864Dv";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // /exec
 
-  // ====== UI helpers ======
-  const $ = (id) => document.getElementById(id);
+let accessToken = "";
+let userId = "";
+let breakdownStart = 0;
+const breakdownLimit = 50;
 
-  function setStatus(msg) {
-    $("status").textContent = msg;
+// DOM helper
+const el = (id)=>document.getElementById(id);
+
+function setStatus(msg, ok=true){
+  const s = el("status");
+  s.textContent = msg;
+  s.className = "status " + (ok ? "ok" : "ng");
+}
+
+// yyyyMM（今月）
+function currentYm(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  return `${y}${m}`;
+}
+
+async function liffInit(){
+  setStatus("LIFF 初期化中…");
+  await liff.init({ liffId: LIFF_ID });
+
+  if (!liff.isLoggedIn()){
+    setStatus("ログイン中…");
+    liff.login({ redirectUri: location.href });
+    return;
   }
 
-  function setButtonsEnabled(enabled) {
-    $("btnAdd").disabled = !enabled;
-    $("btnUndo").disabled = !enabled;
-    $("btnRefresh").disabled = !enabled;
+  accessToken = liff.getAccessToken();
+  setStatus("ログイン完了。プロフィール取得中…");
+
+  // ✅ whoamiは呼ばない：LIFFから表示用に取得
+  try{
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+    el("who").textContent = `userId: ${userId} / ${profile.displayName}`;
+  }catch{
+    el("who").textContent = `userId: (取得できませんでした)`;
   }
 
-  // ====== API call wrapper ======
-  async function apiCall(op, payload) {
-    const res = await fetch(WEBAPP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ op, payload })
-    });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || "API error");
-    return json;
-  }
+  // items & memo1 options（ここはGASで承認チェックしてOKなら返す）
+  setStatus("項目一覧取得中…");
+  const items = await apiGet("items");
+  fillSelect(el("selItem"), items.items);
+  fillSelect(el("selMemo1"), items.memo1Options || ["", "かずき","かずきカード","みく","みくカード"]);
 
-  async function refreshSummaryAndChart() {
-    const yyyymm = $("yyyymm").value.trim();
-    if (!yyyymm) throw new Error("yyyymm が未入力です");
+  // 初期値
+  el("inpSumMonth").value = currentYm();
+  el("inpBrMonth").value = currentYm();
+  el("inpChartMonth").value = currentYm();
 
-    // summary (E39)
-    const s = await apiCall("getSummary", { yyyymm });
-    $("summary").value = String(s.value ?? "");
+  setStatus("準備OK（追加・合計・内訳・グラフが使えます）");
+}
 
-    // chart (ONE)
-    const c = await apiCall("getChartOne", { yyyymm, name: "残額" });
-    const img = $("chart");
-    if (c.found && c.dataUrl) {
-      img.src = c.dataUrl;
-      $("chartMeta").textContent = `fileId=${c.fileId} updated=${c.updated}`;
-    } else {
-      img.removeAttribute("src");
-      $("chartMeta").textContent = "画像が見つかりませんでした（フォルダ/命名規則を確認）";
-    }
-  }
-
-  // ====== Actions ======
-  async function onAdd() {
-    try {
-      setStatus("追加中...");
-      const yyyymm = $("yyyymm").value.trim();
-      const item   = $("item").value.trim();
-      const amount = Number($("amount").value);
-      const note1  = $("note1").value;
-      const note2  = $("note2").value;
-
-      const r = await apiCall("add", { yyyymm, item, amount, note1, note2, source: "miniapp" });
-      $("lastTxId").value = r.txId;
-
-      // ★UX安定：操作直後に必ず1枚取得APIで更新
-      await refreshSummaryAndChart();
-      setStatus(`追加OK txId=${r.txId}`);
-    } catch (e) {
-      setStatus("追加失敗: " + e.message);
-    }
-  }
-
-  async function onUndo() {
-    try {
-      setStatus("取消中...");
-      const yyyymm = $("yyyymm").value.trim();
-      const txId   = $("lastTxId").value.trim();
-      if (!txId) throw new Error("直前txIdが空です");
-
-      const r = await apiCall("undo", { yyyymm, txId, source: "miniapp" });
-
-      // ★ここも必ず更新
-      await refreshSummaryAndChart();
-      setStatus(`取消OK txId=${r.txId}`);
-    } catch (e) {
-      setStatus("取消失敗: " + e.message);
-    }
-  }
-
-  async function onRefresh() {
-    try {
-      setStatus("更新中...");
-      await refreshSummaryAndChart();
-      setStatus("更新OK");
-    } catch (e) {
-      setStatus("更新失敗: " + e.message);
-    }
-  }
-
-  // ====== LIFF init ======
-  async function initLiff() {
-    $("apiUrl").value = WEBAPP_URL;
-    $("liffId").value = LIFF_ID;
-    $("apiUrlHint").textContent = WEBAPP_URL;
-    $("liffHint").textContent = LIFF_ID;
-
-    try {
-      setStatus("LIFF 初期化中...");
-      await liff.init({ liffId: LIFF_ID });
-
-      const inClient = liff.isInClient();
-      const loggedIn = liff.isLoggedIn();
-
-      if (!loggedIn) {
-        $("liffState").value = "未ログイン";
-        $("profileHint").textContent = "LIFFログインします（外部ブラウザの場合はログイン画面に遷移）";
-        // ログインが必要なら実行
-        liff.login({ redirectUri: window.location.href });
-        return;
-      }
-
-      // Logged in
-      $("liffState").value = inClient ? "LINE内（ログイン済）" : "外部ブラウザ（ログイン済）";
-      setButtonsEnabled(true);
-
-      // 任意：プロフィール表示（取れない場合もあるのでtry）
-      try {
-        const profile = await liff.getProfile();
-        $("profileHint").textContent = `ユーザー: ${profile.displayName}`;
-      } catch {
-        $("profileHint").textContent = "プロフィール取得はスキップ";
-      }
-
-      setStatus("準備完了");
-
-      // 任意：yyyymmが入っていたら初期更新
-      if ($("yyyymm").value.trim()) {
-        await onRefresh();
-      }
-    } catch (e) {
-      // LIFFが使えない環境でも動作だけはさせたいなら、ここでボタン有効化も可能
-      $("liffState").value = "LIFF初期化失敗";
-      $("profileHint").textContent = "この環境でLIFFが使えない可能性。LINE内で開いてください。";
-      setButtonsEnabled(false);
-      setStatus("LIFF初期化失敗: " + e.message);
-    }
-  }
-
-  // ====== Bind UI ======
-  window.addEventListener("load", () => {
-    $("btnAdd").addEventListener("click", onAdd);
-    $("btnUndo").addEventListener("click", onUndo);
-    $("btnRefresh").addEventListener("click", onRefresh);
-    initLiff();
+function fillSelect(selectEl, arr){
+  selectEl.innerHTML = "";
+  arr.forEach(v=>{
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v === "" ? "（なし）" : v;
+    selectEl.appendChild(opt);
   });
-</script>
+}
 
+// GET API
+async function apiGet(op, params={}){
+  const url = new URL(WEBAPP_URL);
+  url.searchParams.set("action","api");
+  url.searchParams.set("op", op);
+
+  // chart_image_b64 は token不要（GAS側と合わせる前提）
+  if (op !== "chart_image_b64"){
+    url.searchParams.set("access_token", accessToken);
+  }
+
+  Object.entries(params).forEach(([k,v])=>{
+    if (v !== undefined && v !== null && String(v).length) url.searchParams.set(k, String(v));
+  });
+
+  const res = await fetch(url.toString(), { method:"GET" });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || "API error");
+  return data;
+}
+
+// POST API（プリフライト回避）
+async function apiPost(body){
+  const url = new URL(WEBAPP_URL);
+  url.searchParams.set("action","api");
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e){ throw new Error("JSON以外が返りました: " + text.slice(0,120)); }
+
+  if (!data.ok) throw new Error(data.error || "API error");
+  return data;
+}
+
+function parseAmountInput(v){
+  const t = String(v||"").trim().replace(/,/g,"");
+  if (!t || !/^-?\d+$/.test(t)) return NaN;
+  return Number(t);
+}
+
+async function onAdd(){
+  try{
+    setStatus("追加中…");
+    const month = (el("inpMonth").value || "").trim();
+    const item = el("selItem").value;
+    const amount = parseAmountInput(el("inpAmount").value);
+    const memo1 = el("selMemo1").value;
+    const memo2 = (el("inpMemo2").value || "").trim();
+
+    if (!item) throw new Error("項目を選んでください");
+    if (!Number.isFinite(amount)) throw new Error("金額が不正です");
+
+    const body = { op:"add", access_token: accessToken, item, amount, memo1, memo2 };
+    if (month) body.month = month;
+
+    await apiPost(body);
+    setStatus("✅ 追加しました");
+    el("inpAmount").value = "";
+    el("inpMemo2").value = "";
+
+  }catch(e){
+    setStatus("❌ 追加失敗: " + e.message, false);
+  }
+}
+
+async function onUndo(){
+  try{
+    setStatus("取り消し中…");
+    const r = await apiPost({ op:"undo", access_token: accessToken });
+    setStatus("✅ " + (r.msg || "取り消しました"));
+  }catch(e){
+    setStatus("❌ 取り消し失敗: " + e.message, false);
+  }
+}
+
+function renderSummary(data){
+  const overall = Number(data.overall||0).toLocaleString();
+  const rows = data.rows || [];
+  let html = `<div><b>全体残額：</b>${overall}円</div>`;
+  html += `<table style="margin-top:8px;">
+    <thead><tr><th>項目</th><th class="right">予算</th><th class="right">支出</th><th class="right">残額</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    html += `<tr>
+      <td>${escapeHtml(r.name)}</td>
+      <td class="right">${Number(r.budget||0).toLocaleString()}</td>
+      <td class="right">${Number(r.spend||0).toLocaleString()}</td>
+      <td class="right">${Number(r.remain||0).toLocaleString()}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  el("sumOut").innerHTML = html;
+}
+
+function renderBreakdown(data){
+  const rows = data.rows || [];
+  let html = `<div class="small">表示：${data.start+1}〜${Math.min(data.start+rows.length, data.total)} / ${data.total}</div>`;
+  html += `<table style="margin-top:8px;">
+    <thead><tr><th>日付</th><th>項目</th><th class="right">金額</th><th>備考1</th><th>備考2</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    html += `<tr>
+      <td>${escapeHtml(r.date)}</td>
+      <td>${escapeHtml(r.item)}</td>
+      <td class="right">${Number(r.amount||0).toLocaleString()}</td>
+      <td>${escapeHtml(r.memo1||"")}</td>
+      <td>${escapeHtml(r.memo2||"")}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  el("brOut").innerHTML = html;
+
+  el("btnMore").style.display = data.hasMore ? "" : "none";
+}
+
+async function onSummary(){
+  try{
+    setStatus("合計を取得中…");
+    const month = (el("inpSumMonth").value || "").trim() || currentYm();
+    const r = await apiGet("summary", { month });
+    renderSummary(r);
+    setStatus("✅ 合計を表示しました");
+  }catch(e){
+    setStatus("❌ 合計取得失敗: " + e.message, false);
+  }
+}
+
+async function onBreakdown(reset=true){
+  try{
+    setStatus("内訳を取得中…");
+    const month = (el("inpBrMonth").value || "").trim() || currentYm();
+    if (reset) breakdownStart = 0;
+
+    const r = await apiGet("breakdown", { month, start: breakdownStart, limit: breakdownLimit });
+    renderBreakdown(r);
+
+    breakdownStart = r.nextStart || (breakdownStart + breakdownLimit);
+    setStatus("✅ 内訳を表示しました");
+  }catch(e){
+    setStatus("❌ 内訳取得失敗: " + e.message, false);
+  }
+}
+
+async function loadChart(){
+  try{
+    const month = (el("inpChartMonth").value || "").trim() || currentYm();
+    el("chartMsg").textContent = "グラフ生成中…";
+    el("chartImgWrap").style.display = "none";
+
+    const r = await apiGet("chart_overall", { month });
+
+    el("chartMsg").textContent = "画像を取得中…";
+    const b = await apiGet("chart_image_b64", { fileId: r.fileId });
+
+    const img = el("chartImg");
+    img.onload = ()=>{
+      el("chartImgWrap").style.display = "";
+      el("chartMsg").textContent = "✅ グラフを更新しました";
+    };
+    img.onerror = ()=>{
+      el("chartMsg").textContent = "❌ 画像は読み込めませんでした";
+    };
+    img.src = "data:image/jpeg;base64," + b.b64;
+
+  }catch(e){
+    el("chartMsg").textContent = "❌ グラフ更新失敗: " + e.message;
+  }
+}
+
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, (c)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+// events
+el("btnAdd").addEventListener("click", onAdd);
+el("btnUndo").addEventListener("click", onUndo);
+el("btnSummary").addEventListener("click", onSummary);
+el("btnBreakdown").addEventListener("click", ()=>onBreakdown(true));
+el("btnMore").addEventListener("click", ()=>onBreakdown(false));
+el("btnChart").addEventListener("click", loadChart);
+
+// start
+liffInit().catch(e=>{
+  setStatus("❌ 起動失敗: " + e.message, false);
+});
+</script>
 </body>
 </html>
