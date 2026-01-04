@@ -9,33 +9,24 @@
     :root{
       --bg:#0b0c10; --card:#12141a; --muted:#9aa3b2; --text:#eef2ff;
       --line:#232735; --accent:#4f7cff;
-      --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
     }
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); }
     header{
-      padding:14px 16px 10px;
-      position:sticky; top:0;
+      padding:16px 16px 10px; position:sticky; top:0;
       background:linear-gradient(180deg, rgba(11,12,16,.98), rgba(11,12,16,.85));
-      backdrop-filter: blur(10px);
-      border-bottom:1px solid var(--line);
-      z-index:10;
+      backdrop-filter: blur(10px); border-bottom:1px solid var(--line); z-index:10;
     }
-    .headTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .headrow{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
     h1{ margin:0; font-size:18px; letter-spacing:.02em; }
-    .headRight{ display:flex; align-items:center; gap:10px; }
-    .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:7px 10px; border-radius:999px;
-      border:1px solid var(--line);
-      background:#0f1117;
-      font-size:12px; color:var(--text);
-      white-space:nowrap;
+    .sub{ margin-top:6px; font-size:12px; color:var(--muted); }
+    .pillrow{ display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+    .pill{
+      font-size:12px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--line); background:rgba(18,20,26,.7);
+      color:var(--text); white-space:nowrap;
     }
-    .dot{ width:8px; height:8px; border-radius:999px; background:var(--muted); }
-    .dot.ok{ background:var(--ok); }
-    .dot.warn{ background:var(--warn); }
-    .dot.bad{ background:var(--bad); }
-    .sub{ margin-top:8px; font-size:12px; color:var(--muted); }
+    .pill.ok{ border-color:#2c3350; }
+    .pill.muted{ color:var(--muted); }
     .wrap{ padding:14px 14px 40px; max-width:860px; margin:0 auto; }
     .tabs{ display:flex; gap:8px; margin:10px 0 14px; }
     .tab{ flex:1; background:transparent; border:1px solid var(--line); color:var(--text); padding:10px 8px; border-radius:12px; font-weight:600; }
@@ -59,54 +50,45 @@
     .msg{ white-space:pre-wrap; font-size:12px; color:#cbd5ff; margin-top:10px; padding:10px; border:1px dashed #2a2f40; border-radius:12px; background:#0f1117; }
 
     /* chart list */
-    .chartTitle{ font-size:13px; color:var(--muted); margin:0 0 8px; display:flex; justify-content:space-between; gap:10px; }
-    .chartTitle b{ color:var(--text); font-weight:800; }
+    .chartList{ display:flex; flex-direction:column; gap:12px; }
+    .chartItemTitle{ font-size:13px; font-weight:700; color:#dbe4ff; margin-bottom:8px; }
     .chartImg{
       width:100%; border-radius:14px; border:1px solid var(--line); background:#0f1117;
       cursor:pointer;
     }
 
     /* modal */
-    .modal{
+    .modalBackdrop{
       position:fixed; inset:0; background:rgba(0,0,0,.75);
-      display:none; align-items:center; justify-content:center;
-      padding:18px; z-index:999;
+      display:none; align-items:center; justify-content:center; z-index:999;
+      padding:16px;
     }
-    .modal.open{ display:flex; }
-    .modalInner{
-      width:min(980px, 100%);
-      background:#0f1117;
-      border:1px solid #2a2f40;
-      border-radius:16px;
-      padding:10px;
+    .modalBackdrop.show{ display:flex; }
+    .modalCard{
+      width:min(980px, 100%); background:#0f1117; border:1px solid #2a2f40;
+      border-radius:16px; padding:10px;
     }
-    .modalTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 8px 10px; }
-    .modalTop b{ font-size:13px; }
-    .modalClose{
+    .modalTop{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+    .modalTop .title{ font-weight:800; font-size:14px; color:#eef2ff; }
+    .modalTop button{
       background:transparent; border:1px solid var(--line); color:var(--text);
-      border-radius:10px; padding:6px 10px; font-weight:700;
+      padding:6px 10px; border-radius:10px; font-weight:700;
     }
-    .modalImg{
-      width:100%; border-radius:12px; border:1px solid var(--line);
-      background:#0b0c10;
-    }
+    .modalImg{ width:100%; border-radius:12px; border:1px solid var(--line); background:#0b0c10; }
   </style>
 </head>
 <body>
 <header>
-  <div class="headTop">
-    <h1>家計簿</h1>
-    <div class="headRight">
-      <div class="chip" id="statusChip" title="現在の動作">
-        <span class="dot" id="statusDot"></span>
-        <span id="statusText">initializing…</span>
-      </div>
-      <button class="chip" id="btnLoginState" type="button" title="ログイン状態">
-        ログイン済み
-      </button>
+  <div class="headrow">
+    <div>
+      <h1>家計簿</h1>
+      <div class="sub" id="who">initializing…</div>
+    </div>
+    <div class="pillrow">
+      <div class="pill ok" id="loginPill">未ログイン</div>
+      <div class="pill muted" id="statePill">待機</div>
     </div>
   </div>
-  <div class="sub" id="who">initializing…</div>
 </header>
 
 <div class="wrap">
@@ -236,15 +218,15 @@
           <div class="hint">空欄なら当月。</div>
         </div>
         <div style="display:flex; align-items:flex-end; gap:10px;">
-          <button class="btn" id="btnChart">更新</button>
+          <button class="btn" id="btnChartList">一覧表示</button>
         </div>
       </div>
 
-      <div class="hint" style="margin-top:10px;">
-        上：全体残額　／　下：項目別（スクロール）
-      </div>
+      <div class="hint" id="chartHint">※ 全体残額→項目順（base64で確実表示）</div>
 
-      <div id="chartList"></div>
+      <div class="card" style="margin-top:12px;">
+        <div id="chartList" class="chartList"></div>
+      </div>
 
       <div class="msg" id="msgChart" style="display:none;"></div>
     </div>
@@ -252,13 +234,13 @@
 </div>
 
 <!-- modal -->
-<div class="modal" id="imgModal" role="dialog" aria-modal="true">
-  <div class="modalInner">
+<div class="modalBackdrop" id="imgModal">
+  <div class="modalCard">
     <div class="modalTop">
-      <b id="modalTitle">画像</b>
-      <button class="modalClose" id="modalClose" type="button">閉じる</button>
+      <div class="title" id="modalTitle">画像</div>
+      <button id="modalClose">閉じる</button>
     </div>
-    <img id="modalImg" class="modalImg" alt="preview" />
+    <img id="modalImg" class="modalImg" alt="modal" />
   </div>
 </div>
 
@@ -269,16 +251,14 @@
   const LIFF_ID = "2008812269-var864Dv";
   const API_BASE = "https://script.google.com/macros/s/AKfycbwCRPyhJLCWkw_F-pm177DGUgq2R_sTVPZLzXuotaJZ6B6R53vDBVpuKXUfYb_N6P_2Eg/exec"; // 末尾 /exec まで
 
-  // status UI
-  function setStatus(text, level=""){
-    const t = document.getElementById("statusText");
-    const d = document.getElementById("statusDot");
-    t.textContent = text;
-    d.className = "dot" + (level ? (" " + level) : "");
+  // ===== 状態表示 =====
+  function setState(text){
+    const el = document.getElementById("statePill");
+    el.textContent = text;
   }
 
-  // timeout付きfetch
-  async function fetchWithTimeout(url, opts={}, timeoutMs=15000){
+  // timeout付きfetch（デフォルト60秒）
+  async function fetchWithTimeout(url, opts={}, timeoutMs=60000){
     const ac = new AbortController();
     const t = setTimeout(()=>ac.abort(), timeoutMs);
     try{
@@ -324,7 +304,7 @@
   let accessToken = "";
   let myUserId = "";
 
-  async function apiGet(op, params={}){
+  async function apiGet(op, params={}, timeoutMs=60000){
     const qs = new URLSearchParams({
       action:"api",
       op,
@@ -332,72 +312,48 @@
       ...params
     });
     const url = `${API_BASE}?${qs.toString()}`;
-    const res = await fetchWithTimeout(url, { method:"GET" });
+    const res = await fetchWithTimeout(url, { method:"GET" }, timeoutMs);
     const data = await readRes(res);
     if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   }
 
-  async function apiPost(body){
+  async function apiPost(body, timeoutMs=60000){
     const url = `${API_BASE}?action=api`;
     const res = await fetchWithTimeout(url, {
       method:"POST",
       // preflight回避
       headers: { "Content-Type":"text/plain;charset=UTF-8" },
       body: JSON.stringify(body)
-    });
+    }, timeoutMs);
     const data = await readRes(res);
     if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
   }
 
-  // modal
-  const modal = document.getElementById("imgModal");
-  const modalImg = document.getElementById("modalImg");
-  const modalTitle = document.getElementById("modalTitle");
-  function openModal(title, src){
-    modalTitle.textContent = title || "画像";
-    modalImg.src = src;
-    modal.classList.add("open");
-  }
-  function closeModal(){
-    modal.classList.remove("open");
-    modalImg.src = "";
-  }
-  document.getElementById("modalClose").addEventListener("click", closeModal);
-  modal.addEventListener("click", (e)=>{
-    if (e.target === modal) closeModal();
-  });
-
   async function init(){
-    setStatus("initializing…");
+    setState("初期化中…");
     await liff.init({ liffId: LIFF_ID });
-
     if (!liff.isLoggedIn()){
-      setStatus("login required", "warn");
+      document.getElementById("loginPill").textContent = "未ログイン";
       liff.login();
       return;
     }
-
+    document.getElementById("loginPill").textContent = "ログイン済み";
     accessToken = liff.getAccessToken();
-    setStatus("logged in", "ok");
 
     // whoami
     try{
-      setStatus("whoami…");
-      const me = await apiGet("whoami");
+      const me = await apiGet("whoami", {}, 20000);
       myUserId = me.userId;
       document.getElementById("who").textContent = `user: ${myUserId}`;
-      setStatus("ready", "ok");
     }catch(e){
       document.getElementById("who").textContent = `init error: ${e.message}`;
-      setStatus("init error", "bad");
     }
 
     // items
     try{
-      setStatus("loading items…");
-      const r = await apiGet("items");
+      const r = await apiGet("items", {}, 20000);
       const itemSel = document.getElementById("itemSel");
       itemSel.innerHTML = "";
       r.items.forEach(x=>{
@@ -413,10 +369,8 @@
         opt.value = x; opt.textContent = x==="" ? "（なし）" : x;
         memo1Sel.appendChild(opt);
       });
-      setStatus("ready", "ok");
     }catch(e){
       showMsg("msgAdd", `items error: ${e.message}`);
-      setStatus("items error", "bad");
     }
 
     // default months
@@ -424,36 +378,27 @@
     document.getElementById("monthSum").value = "";
     document.getElementById("monthBd").value = "";
     document.getElementById("monthChart").value = "";
-  }
 
-  // ログイン済みボタン（今は表示用：将来ログアウト等へ）
-  document.getElementById("btnLoginState").addEventListener("click", async ()=>{
-    // 必要ならここで liff.logout() → liff.login() などにできる
-    // 今は誤操作防止で何もしない
-  });
+    setState("待機");
+  }
 
   // tabs
   document.querySelectorAll(".tab").forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
+    btn.addEventListener("click", ()=>{
       document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
       btn.classList.add("active");
       const t = btn.dataset.tab;
       ["add","summary","breakdown","chart"].forEach(k=>{
         document.getElementById(`tab-${k}`).style.display = (k===t) ? "" : "none";
       });
-
-      // グラフタブに入ったら自動で一覧更新（UX）
-      if (t === "chart") {
-        await loadChartList();
-      }
+      setState("待機");
     });
   });
 
   // add
   document.getElementById("btnAdd").addEventListener("click", async ()=>{
     hideMsg("msgAdd");
-    setStatus("入力中…", "warn");
-
+    setState("入力中…");
     const item  = document.getElementById("itemSel").value;
     const amount= Number(document.getElementById("amount").value);
     const memo1 = document.getElementById("memo1Sel").value;
@@ -461,43 +406,42 @@
     const month = (document.getElementById("monthAdd").value || "").trim();
 
     try{
-      setStatus("送信中…", "warn");
       const r = await apiPost({
         op:"add",
         access_token: accessToken,
         item, amount,
         memo1, memo2,
         month: month || null
-      });
+      }, 30000);
       showMsg("msgAdd", r);
-      setStatus("完了", "ok");
+      setState("完了");
     }catch(e){
       showMsg("msgAdd", `add failed: ${e.message}`);
-      setStatus("add error", "bad");
+      setState("エラー");
     }
   });
 
   // undo
   document.getElementById("btnUndo").addEventListener("click", async ()=>{
     hideMsg("msgAdd");
+    setState("取り消し中…");
     try{
-      setStatus("取り消し中…", "warn");
-      const r = await apiPost({ op:"undo", access_token: accessToken });
+      const r = await apiPost({ op:"undo", access_token: accessToken }, 30000);
       showMsg("msgAdd", r);
-      setStatus("完了", "ok");
+      setState("完了");
     }catch(e){
       showMsg("msgAdd", `undo failed: ${e.message}`);
-      setStatus("undo error", "bad");
+      setState("エラー");
     }
   });
 
   // summary
   document.getElementById("btnSum").addEventListener("click", async ()=>{
     hideMsg("msgSum");
+    setState("取得中…");
     const month = (document.getElementById("monthSum").value || "").trim() || currentYYYYMM();
     try{
-      setStatus("取得中…", "warn");
-      const r = await apiGet("summary", { month });
+      const r = await apiGet("summary", { month }, 30000);
       document.getElementById("overall").textContent = money(r.overall) + "円";
 
       const body = document.getElementById("sumBody");
@@ -512,23 +456,23 @@
         `;
         body.appendChild(tr);
       });
-      setStatus("完了", "ok");
+      setState("完了");
     }catch(e){
       showMsg("msgSum", `summary failed: ${e.message}`);
-      setStatus("summary error", "bad");
+      setState("エラー");
     }
   });
 
   // breakdown
   async function loadBreakdown(){
     hideMsg("msgBd");
+    setState("取得中…");
     const month = (document.getElementById("monthBd").value || "").trim() || currentYYYYMM();
     const start = Number(document.getElementById("startBd").value || 0);
     const limit = Number(document.getElementById("limitBd").value || 50);
 
     try{
-      setStatus("取得中…", "warn");
-      const r = await apiGet("breakdown", { month, start, limit });
+      const r = await apiGet("breakdown", { month, start, limit }, 30000);
       const body = document.getElementById("bdBody");
       body.innerHTML = "";
       r.rows.forEach(row=>{
@@ -544,13 +488,12 @@
       });
       document.getElementById("bdInfo").textContent =
         `表示: ${r.start+1}–${r.start + r.rows.length} / ${r.total}` + (r.hasMore ? `  nextStart=${r.nextStart}` : "");
-
       document.getElementById("btnBdMore").disabled = !r.hasMore;
       document.getElementById("btnBdMore").dataset.nextStart = r.nextStart;
-      setStatus("完了", "ok");
+      setState("完了");
     }catch(e){
       showMsg("msgBd", `breakdown failed: ${e.message}`);
-      setStatus("breakdown error", "bad");
+      setState("エラー");
     }
   }
   document.getElementById("btnBd").addEventListener("click", loadBreakdown);
@@ -560,74 +503,74 @@
     loadBreakdown();
   });
 
-  // ✅ chart list: overall + items (urls)
-  async function loadChartList(){
+  // modal
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("modalImg");
+  const modalTitle = document.getElementById("modalTitle");
+  document.getElementById("modalClose").addEventListener("click", ()=>modal.classList.remove("show"));
+  modal.addEventListener("click", (e)=>{ if (e.target === modal) modal.classList.remove("show"); });
+
+  function openModal(title, src){
+    modalTitle.textContent = title || "画像";
+    modalImg.src = src;
+    modal.classList.add("show");
+  }
+
+  // chart list (base64)
+  document.getElementById("btnChartList").addEventListener("click", async ()=>{
     hideMsg("msgChart");
+    setState("グラフ取得中…");
+
     const month = (document.getElementById("monthChart").value || "").trim() || currentYYYYMM();
 
-    const list = document.getElementById("chartList");
-    list.innerHTML = "";
+    const listEl = document.getElementById("chartList");
+    listEl.innerHTML = "";
 
     try{
-      setStatus("グラフ更新中…", "warn");
-      const r = await apiGet("chart_urls", { month });
+      // 90秒で一覧（base64）を取得
+      const r = await apiGet("chart_list_b64", { month }, 90000);
 
-      // overall first
-      if (r.overall && r.overall.url){
-        list.appendChild(buildChartCard(r.overall.title || "全体残額", r.overall.url));
+      // 1) overall
+      if (r.overall && r.overall.b64){
+        const src = `data:${r.overall.mimeType||"image/jpeg"};base64,${r.overall.b64}`;
+        const box = document.createElement("div");
+        box.className = "card";
+        box.innerHTML = `<div class="chartItemTitle">${r.overall.title || "全体残額"}</div>`;
+        const img = document.createElement("img");
+        img.className = "chartImg";
+        img.alt = "overall";
+        img.src = src;
+        img.addEventListener("click", ()=>openModal(r.overall.title || "全体残額", src));
+        box.appendChild(img);
+        listEl.appendChild(box);
       }
 
-      // items
-      (r.items || []).forEach(it=>{
-        if (!it || !it.url) return;
-        list.appendChild(buildChartCard(it.title || "項目", it.url));
+      // 2) items
+      (r.items||[]).forEach((it)=>{
+        if (!it.b64) return;
+        const src = `data:${it.mimeType||"image/jpeg"};base64,${it.b64}`;
+        const box = document.createElement("div");
+        box.className = "card";
+        box.innerHTML = `<div class="chartItemTitle">${it.title}</div>`;
+        const img = document.createElement("img");
+        img.className = "chartImg";
+        img.alt = it.title;
+        img.src = src;
+        img.addEventListener("click", ()=>openModal(it.title, src));
+        box.appendChild(img);
+        listEl.appendChild(box);
       });
 
-      setStatus("完了", "ok");
+      setState("完了");
     }catch(e){
       showMsg("msgChart", `chart list failed: ${e.message}`);
-      setStatus("chart error", "bad");
+      setState("エラー");
     }
-  }
-
-  function buildChartCard(title, url){
-    const wrap = document.createElement("div");
-    wrap.className = "card";
-    wrap.style.marginTop = "12px";
-
-    const head = document.createElement("div");
-    head.className = "chartTitle";
-    head.innerHTML = `<b>${escapeHtml(title)}</b><span>タップで拡大</span>`;
-
-    const img = document.createElement("img");
-    img.className = "chartImg";
-    img.alt = title;
-    img.loading = "lazy";
-    img.src = url;
-
-    img.addEventListener("click", ()=>{
-      openModal(title, url);
-    });
-
-    wrap.appendChild(head);
-    wrap.appendChild(img);
-    return wrap;
-  }
-
-  function escapeHtml(s){
-    return String(s||"")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#39;");
-  }
-
-  document.getElementById("btnChart").addEventListener("click", loadChartList);
+  });
 
   init().catch(err=>{
     document.getElementById("who").textContent = `init fatal: ${err.message}`;
-    setStatus("fatal", "bad");
+    setState("エラー");
   });
 </script>
 </body>
